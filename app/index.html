@@ -109,6 +109,8 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .acct-row.sel .acct-check{background:var(--accent);border-color:var(--accent)}
 .acct-check-ic{opacity:0;transition:opacity .15s}
 .acct-row.sel .acct-check-ic{opacity:1}
+.add-acct-btn{width:100%;background:transparent;border:1.5px dashed var(--border);border-radius:12px;padding:11px 14px;font-size:13px;color:var(--text2);cursor:pointer;margin-bottom:18px;text-align:center;transition:border-color .15s,color .15s;-webkit-tap-highlight-color:transparent}
+.add-acct-btn:hover{border-color:var(--accent-dim);color:var(--accent)}
 .ob-footer{padding:14px 20px;padding-bottom:calc(14px + env(safe-area-inset-bottom,0px));background:var(--bg);border-top:1px solid var(--border);flex-shrink:0}
 .btn-cta{width:100%;padding:15px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;transition:opacity .15s,transform .1s;-webkit-tap-highlight-color:transparent}
 .btn-cta:disabled{opacity:.35;cursor:not-allowed}
@@ -434,8 +436,10 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
           </div>
         </div>
 
+        <button class="add-acct-btn" onclick="openAddAcct('bank')">+ Add bank account</button>
+
         <div class="ob-sec-lbl">Credit cards</div>
-        <div class="acct-list">
+        <div class="acct-list" id="card-list">
           <div class="acct-row" onclick="toggleAcct(this)">
             <div class="acct-dot" style="background:#1A1F71;color:#fff">Vi</div>
             <div class="acct-info"><div class="acct-name">Chase Sapphire</div><div class="acct-sub">Visa ···9214 · most subscriptions here</div></div>
@@ -457,12 +461,46 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
             <div class="acct-check"><svg class="acct-check-ic" width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M2 5.5l2.5 2.5 4.5-4.5" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
           </div>
         </div>
+        <button class="add-acct-btn" onclick="openAddAcct('card')">+ Add credit / debit card</button>
+
         <div style="height:8px"></div>
       </div>
       <div class="ob-footer">
         <button class="btn-cta" id="scan-btn" disabled onclick="startConnect()">Select accounts to continue</button>
         <div class="sel-count" id="sel-count"></div>
       </div>
+    </div>
+  </div>
+
+  <!-- ADD ACCOUNT SHEET -->
+  <div id="add-acct-sheet" class="csheet hide">
+    <div class="csheet-bg" onclick="closeAddAcct()"></div>
+    <div class="csheet-inner" style="gap:14px">
+      <div class="csheet-title" id="add-acct-title">Add bank account</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;flex-direction:column;gap:5px">
+          <label style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px">Bank / Card name</label>
+          <input id="add-acct-name" type="text" placeholder="e.g. Nordea, Barclays, HSBC…" style="background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;padding:11px 13px;font-size:14px;color:var(--text);outline:none;width:100%;box-sizing:border-box" oninput="validateAddAcct()">
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px">
+          <label style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px">Account type</label>
+          <select id="add-acct-type" style="background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;padding:11px 13px;font-size:14px;color:var(--text);outline:none;width:100%;box-sizing:border-box;-webkit-appearance:none" onchange="validateAddAcct()">
+            <option value="" disabled selected>Select type…</option>
+            <option value="Checking">Checking</option>
+            <option value="Savings">Savings</option>
+            <option value="Visa">Visa</option>
+            <option value="Mastercard">Mastercard</option>
+            <option value="Amex">Amex</option>
+            <option value="Debit">Debit</option>
+          </select>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px">
+          <label style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px">Last 4 digits <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
+          <input id="add-acct-digits" type="text" inputmode="numeric" maxlength="4" placeholder="1234" style="background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;padding:11px 13px;font-size:14px;color:var(--text);outline:none;width:100%;box-sizing:border-box" oninput="this.value=this.value.replace(/\D/g,'').slice(0,4)">
+        </div>
+      </div>
+      <button class="abtn" id="add-acct-confirm" onclick="confirmAddAcct()" disabled style="margin-top:2px">Add account</button>
+      <button class="abtn neu" onclick="closeAddAcct()">Cancel</button>
     </div>
   </div>
 
@@ -1028,6 +1066,53 @@ function updateSelCount() {
     lbl.textContent = cards > 0 ? `${cards} credit card${cards>1?'s':''} included — subscriptions will be detected` : 'Add a credit card for better coverage';
   }
 }
+// ── ADD ACCOUNT ──
+const ACCT_COLORS = ['#0B5ED7','#E31837','#4CAF50','#9C27B0','#FF6F00','#00796B','#AD1457','#1565C0','#37474F','#2E7D32'];
+let _addAcctMode = 'bank';
+function openAddAcct(mode) {
+  _addAcctMode = mode;
+  const isCard = mode === 'card';
+  document.getElementById('add-acct-title').textContent = isCard ? 'Add card' : 'Add bank account';
+  const sel = document.getElementById('add-acct-type');
+  // pre-filter the select options to match the mode
+  Array.from(sel.options).forEach(o => {
+    if (!o.value) return;
+    const isCardType = ['Visa','Mastercard','Amex','Debit'].includes(o.value);
+    o.hidden = isCard ? !isCardType : isCardType;
+  });
+  sel.value = '';
+  document.getElementById('add-acct-name').value = '';
+  document.getElementById('add-acct-digits').value = '';
+  document.getElementById('add-acct-confirm').disabled = true;
+  document.getElementById('add-acct-sheet').classList.remove('hide');
+  setTimeout(() => document.getElementById('add-acct-name').focus(), 100);
+}
+function closeAddAcct() {
+  document.getElementById('add-acct-sheet').classList.add('hide');
+}
+function validateAddAcct() {
+  const name = document.getElementById('add-acct-name').value.trim();
+  const type = document.getElementById('add-acct-type').value;
+  document.getElementById('add-acct-confirm').disabled = !name || !type;
+}
+function confirmAddAcct() {
+  const name = document.getElementById('add-acct-name').value.trim();
+  const type = document.getElementById('add-acct-type').value;
+  const digits = document.getElementById('add-acct-digits').value.trim();
+  const initials = name.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 3);
+  const color = ACCT_COLORS[Math.floor(Math.random() * ACCT_COLORS.length)];
+  const sub = digits ? `${type} ···${digits}` : type;
+  const checkSvg = `<svg class="acct-check-ic" width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M2 5.5l2.5 2.5 4.5-4.5" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  const row = document.createElement('div');
+  row.className = 'acct-row';
+  row.onclick = function() { toggleAcct(this); };
+  row.innerHTML = `<div class="acct-dot" style="background:${color};color:#fff">${initials}</div><div class="acct-info"><div class="acct-name">${name}</div><div class="acct-sub">${sub}</div></div><div class="acct-check">${checkSvg}</div>`;
+  const listId = _addAcctMode === 'card' ? 'card-list' : 'bank-list';
+  document.getElementById(listId).appendChild(row);
+  closeAddAcct();
+  toggleAcct(row); // auto-select the newly added account
+}
+
 const LOAD_STEPS=['Connecting to accounts...','Reading transactions...','Identifying recurring charges...','Detecting subscriptions...','Calculating your savings...','Done!'];
 function startConnect() {
   document.getElementById('onboarding').classList.add('gone');
