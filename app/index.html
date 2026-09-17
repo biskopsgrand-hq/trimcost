@@ -278,7 +278,9 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 
 /* ── CANCEL SHEET ── */
 #csheet{position:absolute;inset:0;z-index:60;display:flex;flex-direction:column;justify-content:flex-end}
+.csheet{position:fixed;inset:0;z-index:200;display:flex;flex-direction:column;justify-content:flex-end}
 #csheet.hide{display:none}
+.csheet.hide{display:none}
 .csheet-bg{position:absolute;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(2px)}
 .csheet-body{position:relative;background:var(--surface);border-radius:22px 22px 0 0;padding:24px 20px;padding-bottom:calc(24px + env(safe-area-inset-bottom,0px));animation:slideUp .3s cubic-bezier(.16,1,.3,1)}
 @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
