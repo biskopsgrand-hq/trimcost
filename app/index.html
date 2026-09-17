@@ -1058,12 +1058,25 @@ let _plaidTransactions = []; // generic name kept for detect pipeline compatibil
 const _TINK_BTN_HTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="2" y="5" width="20" height="14" rx="2.5" stroke="currentColor" stroke-width="1.8"/><path d="M2 9h20" stroke="currentColor" stroke-width="1.8"/><circle cx="6" cy="14" r="1.3" fill="currentColor"/><rect x="9" y="13" width="4" height="1.8" rx=".9" fill="currentColor"/></svg>`;
 
 function normalizeTinkTransactions(tinkTxs) {
+  // MCC ranges that are clearly not subscriptions (retail, grocery, clothing, restaurants, transport)
+  function isNonSubMcc(mcc) {
+    if (!mcc) return false;
+    const n = parseInt(mcc);
+    return (n >= 5300 && n <= 5599) || // retail stores
+           (n >= 5600 && n <= 5699) || // clothing & accessories
+           (n >= 5700 && n <= 5799) || // furniture & home
+           (n >= 5800 && n <= 5814) || // eating places (5815 = digital goods, keep)
+           (n >= 4111 && n <= 4131) || // transport
+           [5411,5412,5422,5541,5542,5912,5310,5311,5331,5999].includes(n); // grocery, gas, drug, misc retail
+  }
+
   return tinkTxs.map(tx => {
     const scale    = tx.amount?.value?.scale ?? 2;
     const unscaled = tx.amount?.value?.unscaledValue ?? 0;
     const raw      = unscaled / Math.pow(10, scale);
-    // Negative = debit (expense); positive = credit. We only want expenses.
-    if (raw >= 0) return null;
+    if (raw >= 0) return null; // skip credits
+    const mcc = tx.merchantInformation?.merchantCategoryCode || '';
+    if (isNonSubMcc(mcc)) return null; // skip obvious non-subscriptions by category
     return {
       amount:        -raw,
       date:          tx.dates?.booked || tx.dates?.value || '',
@@ -1252,7 +1265,7 @@ function fmtD(dateStr) {
 
 function detectSubscriptions(transactions) {
   const groups = {};
-  const SKIP = /payment|transfer|deposit|withdrawal|atm|zelle|venmo|paypal|refund|credit card|loan|mortgage|rent|insurance|tax|fee|interest|dividend|direct dep|payroll|salary|mcdonalds|mcdonald|starbucks|uber eats|doordash|grubhub|chipotle|subway|chick-fil|taco bell|burger king|wendy|domino|pizza|restaurant|grocery|walmart|target|costco|kroger|publix|safeway|cvs|walgreen|rite aid|gas station|shell|exxon|chevron|bp |marathon|speedway|7-eleven/i;
+  const SKIP = /payment|transfer|deposit|withdrawal|atm|zelle|venmo|paypal|refund|credit card|loan|mortgage|rent|insurance|tax|fee|interest|dividend|direct dep|payroll|salary|mcdonalds|mcdonald|starbucks|uber eats|doordash|grubhub|chipotle|subway|chick-fil|taco bell|burger king|wendy|domino|pizza|restaurant|café|cafe|bistro|bar |grocery|supermarket|walmart|target|costco|kroger|publix|safeway|cvs|walgreen|rite aid|gas station|shell|exxon|chevron|bp |marathon|speedway|7-eleven|ica |coop |hemköp|hemkop|willys|lidl|netto|maxi |aldi|h&m|zara|åhléns|ahlens|lindex|kappahl|stadium|systembolaget|apoteket|max burger|pressbyrån|pressbyran|circle k|ok benzin|parking|parkering|clothing|fashion|apparel/i;
   for (const tx of transactions) {
     if (tx.amount <= 0 || tx.amount > 400) continue; // skip refunds and large one-offs
     const key = (tx.merchant_name || tx.name || '').trim();
