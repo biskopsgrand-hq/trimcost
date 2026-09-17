@@ -948,6 +948,9 @@ function renderIns() {
   updateHero();
 }
 
+// ── STRIPE ──
+const STRIPE_PUBLISHABLE_KEY = 'pk_live_51UGm35J0MUG8zNuPDM1AzXl3aFYe7w4qyLCX2n09T5imkD51rYeRG3zFHMOA3ueeKSm2rzcT1nZ9zw3bWjsJbWiD00T7YvE6DY';
+
 // ── PAYWALL ──
 let isPro = false;
 const PW_TITLES = {
@@ -959,13 +962,36 @@ function showPaywall(feature) {
   document.getElementById('paywall').classList.remove('hide');
 }
 function closePaywall() { document.getElementById('paywall').classList.add('hide'); }
-function doUpgrade() {
+async function doUpgrade() {
+  if (!supabaseClient) return;
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  if (!session) { showToast('Please sign in first.'); return; }
+
+  const btn = document.querySelector('#paywall .btn-cta');
+  if (btn) { btn.disabled = true; btn.textContent = 'Redirecting…'; }
+
+  try {
+    const res = await fetch(`${FUNCTIONS_URL}/stripe-checkout`, {
+      method: 'POST',
+      headers: functionsHeaders(),
+      body: JSON.stringify({ user_email: session.user.email, user_id: session.user.id }),
+    });
+    const data = await res.json();
+    if (data.url) {
+      window.location.href = data.url;
+    } else {
+      throw new Error(data.error || 'No checkout URL returned');
+    }
+  } catch (e) {
+    showToast('Payment error: ' + e.message);
+    if (btn) { btn.disabled = false; btn.textContent = 'Start free trial →'; }
+  }
+}
+
+function activatePro() {
   isPro = true;
-  closePaywall();
   document.getElementById('ins-lock').hidden = true;
   document.getElementById('sg-sub').style.display = '';
-  showToast('🎉 Welcome to Pro! Trial started.');
-  // Re-render the open detail panel so the cancel button becomes active
   if (_curDetId !== null && document.getElementById('detail').classList.contains('open')) {
     openDet(_curDetId);
   }
@@ -1596,6 +1622,10 @@ async function enterApp() {
   document.getElementById('auth-screen').classList.add('gone');
   nav('home');
   document.getElementById('view-home').style.display='';
+  // Check Pro status
+  const { data: profile } = await supabaseClient.from('profiles').select('is_pro').eq('user_id', (await supabaseClient.auth.getUser()).data.user?.id ?? '').single();
+  if (profile?.is_pro) activatePro();
+
   // Returning users: load saved subs and skip onboarding
   const saved = await loadSubsFromSupabase();
   if (saved && saved.length > 0) {
@@ -1619,6 +1649,20 @@ document.getElementById('view-home').style.display='';
   const urlParams = new URLSearchParams(window.location.search);
   const tinkCode  = urlParams.get('code');
   const tinkPending = (() => { try { return localStorage.getItem('_tinkPending'); } catch { return null; } })();
+
+  // Handle Stripe payment success return
+  if (urlParams.get('stripe_success') === '1') {
+    window.history.replaceState({}, '', window.location.pathname);
+    if (supabaseClient) {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (session) {
+        await enterApp();
+        closePaywall();
+        showToast('🎉 Welcome to Pro! 7-day free trial started.');
+        return;
+      }
+    }
+  }
 
   if (tinkCode && tinkPending) {
     try { localStorage.removeItem('_tinkPending'); } catch {}
