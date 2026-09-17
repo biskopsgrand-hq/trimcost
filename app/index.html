@@ -1623,7 +1623,7 @@ async function enterApp() {
   nav('home');
   document.getElementById('view-home').style.display='';
   // Check Pro status
-  const { data: profile } = await supabaseClient.from('profiles').select('is_pro').eq('user_id', (await supabaseClient.auth.getUser()).data.user?.id ?? '').single();
+  const { data: profile } = await supabaseClient.from('profiles').select('is_pro').eq('user_id', (await supabaseClient.auth.getUser()).data.user?.id ?? '').maybeSingle();
   if (profile?.is_pro) activatePro();
 
   // Returning users: load saved subs and skip onboarding
