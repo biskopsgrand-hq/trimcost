@@ -1,0 +1,1190 @@
+<title>Subtrack</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+:root {
+  --bg: #0F0F13;
+  --surface: #1A1A22;
+  --surface2: #23232F;
+  --surface3: #2D2D3C;
+  --accent: #00D4AA;
+  --accent-soft: rgba(0,212,170,0.11);
+  --accent-dim: rgba(0,212,170,0.5);
+  --danger: #FF5870;
+  --danger-soft: rgba(255,88,112,0.11);
+  --warning: #FFB347;
+  --warning-soft: rgba(255,179,71,0.11);
+  --text: #EEEDFA;
+  --text2: #87869E;
+  --text3: #52516A;
+  --border: rgba(255,255,255,0.06);
+  --cat-ent: #00D4AA;
+  --cat-pro: #9B8BFF;
+  --cat-hlth: #F47D31;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #F2F1FA;
+    --surface: #FFFFFF;
+    --surface2: #EDEDF6;
+    --surface3: #E2E1EE;
+    --accent: #008C72;
+    --accent-soft: rgba(0,140,114,0.09);
+    --accent-dim: rgba(0,140,114,0.4);
+    --danger: #D93858;
+    --danger-soft: rgba(217,56,88,0.09);
+    --warning: #C47A00;
+    --warning-soft: rgba(196,122,0,0.09);
+    --text: #141320;
+    --text2: #6B6A84;
+    --text3: #9997B5;
+    --border: rgba(0,0,0,0.07);
+    --cat-ent: #007A62;
+    --cat-pro: #6B59E0;
+    --cat-hlth: #C05C15;
+  }
+}
+:root[data-theme="light"] {
+  --bg: #F2F1FA;
+  --surface: #FFFFFF;
+  --surface2: #EDEDF6;
+  --surface3: #E2E1EE;
+  --accent: #008C72;
+  --accent-soft: rgba(0,140,114,0.09);
+  --accent-dim: rgba(0,140,114,0.4);
+  --danger: #D93858;
+  --danger-soft: rgba(217,56,88,0.09);
+  --warning: #C47A00;
+  --warning-soft: rgba(196,122,0,0.09);
+  --text: #141320;
+  --text2: #6B6A84;
+  --text3: #9997B5;
+  --border: rgba(0,0,0,0.07);
+  --cat-ent: #007A62;
+  --cat-pro: #6B59E0;
+  --cat-hlth: #C05C15;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM Sans',system-ui,sans-serif;font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;overflow:hidden}
+#app{height:100%;display:flex;flex-direction:column;max-width:430px;margin:0 auto;position:relative;overflow:hidden}
+
+/* ── ONBOARDING ── */
+#onboarding{position:absolute;inset:0;background:var(--bg);z-index:100;overflow:hidden;transition:opacity .45s,transform .45s}
+#onboarding.gone{opacity:0;transform:translateY(-16px);pointer-events:none}
+.ob-step{position:absolute;inset:0;display:flex;flex-direction:column;padding:0;transition:opacity .3s,transform .3s}
+.ob-step.hidden{opacity:0;transform:translateX(30px);pointer-events:none}
+/* step 1 — centered welcome */
+#ob1{align-items:center;justify-content:center;padding:32px 24px;text-align:center}
+.ob-logo{width:60px;height:60px;background:var(--accent-soft);border:1px solid var(--accent-dim);border-radius:17px;display:flex;align-items:center;justify-content:center;margin-bottom:26px}
+.ob-logo svg{width:30px;height:30px}
+.ob-h{font-size:27px;font-weight:600;letter-spacing:-.5px;margin-bottom:10px}
+.ob-p{font-size:14px;color:var(--text2);max-width:270px;line-height:1.65;margin-bottom:40px}
+.ob-feat{display:flex;flex-direction:column;gap:10px;width:100%;margin-bottom:36px}
+.ob-feat-row{display:flex;align-items:center;gap:12px;padding:11px 14px;background:var(--surface);border:1px solid var(--border);border-radius:11px;text-align:left}
+.ob-feat-ic{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ob-feat-t{font-size:13px;font-weight:500}
+.ob-feat-d{font-size:11px;color:var(--text2)}
+/* step 2 — account selection */
+#ob2{padding-top:calc(56px + env(safe-area-inset-top,0px))}
+.ob2-hdr{padding:0 20px 20px;display:flex;flex-direction:column;gap:6px}
+.ob2-back{position:absolute;top:calc(16px + env(safe-area-inset-top,0px));left:16px;width:34px;height:34px;border-radius:9px;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text);-webkit-tap-highlight-color:transparent}
+.ob2-title{font-size:19px;font-weight:600;letter-spacing:-.3px}
+.ob2-sub{font-size:13px;color:var(--text2);line-height:1.5}
+.ob-tip{margin:0 20px 18px;background:var(--warning-soft);border:1px solid rgba(255,179,71,.2);border-radius:11px;padding:11px 13px;display:flex;align-items:flex-start;gap:10px}
+.ob-tip-ic{font-size:14px;flex-shrink:0;margin-top:1px}
+.ob-tip-t{font-size:12px;color:var(--text2);line-height:1.5}
+.ob-tip-t strong{color:var(--text);font-weight:600}
+.ob-scroll{flex:1;overflow-y:auto;padding:0 20px;scrollbar-width:none}
+.ob-scroll::-webkit-scrollbar{display:none}
+.ob-sec-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);font-weight:700;margin-bottom:8px;margin-top:4px}
+.acct-list{display:flex;flex-direction:column;gap:7px;margin-bottom:18px}
+.acct-row{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--surface);border:1.5px solid var(--border);border-radius:12px;cursor:pointer;transition:border-color .15s,background .15s;-webkit-tap-highlight-color:transparent;position:relative}
+.acct-row:hover{background:var(--surface2)}
+.acct-row.sel{border-color:var(--accent-dim);background:var(--accent-soft)}
+.acct-dot{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;flex-shrink:0}
+.acct-info{flex:1;min-width:0}
+.acct-name{font-size:13px;font-weight:500}
+.acct-sub{font-size:11px;color:var(--text3);margin-top:1px}
+.acct-check{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s,border-color .15s;background:transparent}
+.acct-row.sel .acct-check{background:var(--accent);border-color:var(--accent)}
+.acct-check-ic{opacity:0;transition:opacity .15s}
+.acct-row.sel .acct-check-ic{opacity:1}
+.ob-footer{padding:14px 20px;padding-bottom:calc(14px + env(safe-area-inset-bottom,0px));background:var(--bg);border-top:1px solid var(--border);flex-shrink:0}
+.btn-cta{width:100%;padding:15px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;transition:opacity .15s,transform .1s;-webkit-tap-highlight-color:transparent}
+.btn-cta:disabled{opacity:.35;cursor:not-allowed}
+.btn-cta:not(:disabled):hover{opacity:.88}
+.btn-cta:not(:disabled):active{transform:scale(.98)}
+.sel-count{font-size:11px;color:var(--text3);text-align:center;margin-top:8px;min-height:16px}
+
+/* ── LOADING ── */
+#loading{position:absolute;inset:0;background:var(--bg);z-index:90;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;opacity:0;pointer-events:none;transition:opacity .3s}
+#loading.vis{opacity:1;pointer-events:all}
+.spin{width:38px;height:38px;border:2.5px solid var(--surface3);border-top-color:var(--accent);border-radius:50%;animation:spin .75s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.load-label{color:var(--text2);font-size:13px}
+.load-step{font-family:'DM Mono',monospace;font-size:12px;color:var(--text3);min-height:18px}
+
+/* ── MAIN APP ── */
+#main{height:100%;display:flex;flex-direction:column;opacity:0;transition:opacity .4s}
+#main.vis{opacity:1}
+.app-bar{padding:14px 20px 10px;display:flex;align-items:center;justify-content:space-between;background:var(--bg);flex-shrink:0;padding-top:calc(14px + env(safe-area-inset-top,0px))}
+.app-bar-title{font-size:19px;font-weight:600;letter-spacing:-.3px}
+.app-bar-sub{font-size:11px;color:var(--text3);margin-top:1px}
+.av{width:35px;height:35px;border-radius:50%;background:var(--accent-soft);border:1.5px solid var(--accent-dim);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px;color:var(--accent)}
+.scroll{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.scroll::-webkit-scrollbar{display:none}
+
+/* ── HERO CARD ── */
+.hero{margin:4px 16px 14px;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:22px 22px 18px;position:relative;overflow:hidden}
+.hero::after{content:'';position:absolute;top:-50px;right:-50px;width:180px;height:180px;background:radial-gradient(circle,var(--accent-soft) 0%,transparent 65%);pointer-events:none}
+.hero-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);font-weight:600;margin-bottom:5px}
+.hero-num{font-family:'DM Mono',monospace;font-size:40px;font-weight:500;letter-spacing:-1px;line-height:1;font-variant-numeric:tabular-nums;margin-bottom:3px}
+.hero-sub{font-size:11px;color:var(--text2);margin-bottom:18px}
+.stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.stat-v{font-family:'DM Mono',monospace;font-size:16px;font-weight:500;font-variant-numeric:tabular-nums}
+.stat-v.red{color:var(--danger)}
+.stat-v.grn{color:var(--accent)}
+.stat-l{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;font-weight:600;margin-top:1px}
+
+/* ── SAVINGS BANNER ── */
+.save-banner{margin:0 16px 14px;background:var(--danger-soft);border:1px solid rgba(255,88,112,.2);border-radius:13px;padding:13px 15px;display:flex;align-items:center;gap:11px;cursor:pointer;transition:background .15s;-webkit-tap-highlight-color:transparent}
+.save-banner:hover{background:rgba(255,88,112,.17)}
+.save-banner.hide{display:none}
+.save-ic{width:30px;height:30px;background:rgba(255,88,112,.14);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.save-t{font-size:13px;font-weight:600;color:var(--danger)}
+.save-d{font-size:11px;color:var(--text2);margin-top:1px}
+.save-arr{margin-left:auto;color:var(--danger);opacity:.7;font-size:16px}
+
+/* ── FILTER TABS ── */
+.ftabs{display:flex;gap:6px;padding:0 16px 12px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.ftabs::-webkit-scrollbar{display:none}
+.ftab{padding:5px 13px;border-radius:20px;font-size:12px;font-weight:600;white-space:nowrap;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--text2);transition:all .14s;flex-shrink:0;-webkit-tap-highlight-color:transparent}
+.ftab.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+/* ── SUB LIST ── */
+.sub-list{padding:0 16px 110px;display:flex;flex-direction:column;gap:7px}
+.scard{background:var(--surface);border:1px solid var(--border);border-radius:13px;padding:13px 14px;display:flex;align-items:center;gap:13px;cursor:pointer;transition:background .12s,border-color .12s;animation:fadeUp .3s ease both;-webkit-tap-highlight-color:transparent}
+.scard:hover{background:var(--surface2)}
+.scard.bad{border-color:rgba(255,88,112,.22);background:rgba(255,88,112,.03)}
+.scard:nth-child(1){animation-delay:.00s}
+.scard:nth-child(2){animation-delay:.03s}
+.scard:nth-child(3){animation-delay:.06s}
+.scard:nth-child(4){animation-delay:.09s}
+.scard:nth-child(5){animation-delay:.12s}
+.scard:nth-child(6){animation-delay:.15s}
+.scard:nth-child(7){animation-delay:.18s}
+.scard:nth-child(8){animation-delay:.21s}
+.scard:nth-child(9){animation-delay:.24s}
+.scard:nth-child(10){animation-delay:.27s}
+.scard:nth-child(11){animation-delay:.30s}
+.scard:nth-child(12){animation-delay:.33s}
+.scard:nth-child(13){animation-delay:.36s}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.sic{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.sinf{flex:1;min-width:0}
+.sname{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px}
+.smeta{font-size:10px;color:var(--text3);display:flex;align-items:center;gap:5px}
+.scat-dot{width:5px;height:5px;border-radius:50%;display:inline-block;flex-shrink:0}
+.ubadge{display:none;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;padding:2px 5px;border-radius:4px;background:var(--danger-soft);color:var(--danger);margin-top:3px;width:fit-content}
+.scard.bad .ubadge{display:block}
+.sright{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0}
+.sprice{font-family:'DM Mono',monospace;font-size:13px;font-weight:500;font-variant-numeric:tabular-nums}
+.sprice.red{color:var(--danger)}
+.tog{position:relative;width:33px;height:19px;flex-shrink:0}
+.tog input{opacity:0;width:0;height:0;position:absolute}
+.tog-sl{position:absolute;inset:0;background:var(--surface3);border-radius:10px;cursor:pointer;transition:background .2s}
+.tog-sl::before{content:'';position:absolute;width:13px;height:13px;left:3px;top:3px;background:var(--text3);border-radius:50%;transition:transform .2s,background .2s}
+.tog input:checked+.tog-sl{background:var(--danger-soft);border:1px solid var(--danger)}
+.tog input:checked+.tog-sl::before{transform:translateX(14px);background:var(--danger)}
+.empty{text-align:center;padding:40px 20px;color:var(--text3);font-size:13px;display:none}
+.empty.vis{display:block}
+
+/* ── BOTTOM NAV ── */
+.bnav{position:absolute;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);display:flex;padding:9px 0;padding-bottom:calc(9px + env(safe-area-inset-bottom,0px));max-width:430px;margin:0 auto}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:3px 0;color:var(--text3);transition:color .14s;-webkit-tap-highlight-color:transparent}
+.ni.on{color:var(--accent)}
+.ni svg{width:20px;height:20px}
+.nl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+
+/* ── INSIGHTS VIEW ── */
+#view-ins{display:none;flex-direction:column}
+#view-ins.on{display:flex}
+.ins-h{font-size:19px;font-weight:600;padding:0 16px 14px;letter-spacing:-.3px}
+.sec-hdr{display:flex;justify-content:space-between;align-items:baseline;padding:0 16px 9px}
+.sec-t{font-size:10px;text-transform:uppercase;letter-spacing:.7px;color:var(--text3);font-weight:700}
+.sec-r{font-family:'DM Mono',monospace;font-size:12px;color:var(--text3)}
+.catbars{padding:0 16px;display:flex;flex-direction:column;gap:12px;margin-bottom:22px}
+.cr{display:flex;flex-direction:column;gap:5px}
+.cr-top{display:flex;justify-content:space-between;align-items:baseline}
+.cr-name{font-size:13px;font-weight:500}
+.cr-amt{font-family:'DM Mono',monospace;font-size:12px;color:var(--text2);font-variant-numeric:tabular-nums}
+.bar-bg{height:5px;background:var(--surface3);border-radius:3px;overflow:hidden}
+.bar-fill{height:100%;border-radius:3px;transition:width .8s cubic-bezier(.16,1,.3,1)}
+.mo-chart{padding:0 16px 22px}
+.mo-bars{display:flex;align-items:flex-end;gap:4px;height:72px}
+.mo-bw{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end}
+.mo-b{width:100%;border-radius:4px 4px 0 0;background:var(--surface3);transition:height .7s cubic-bezier(.16,1,.3,1)}
+.mo-b.cur{background:var(--accent);opacity:.85}
+.mo-lbl{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;font-weight:500}
+
+/* ── PROFILE VIEW ── */
+#view-pro{display:none;flex-direction:column;padding:0 16px;padding-bottom:110px}
+#view-pro.on{display:flex}
+.pro-head{display:flex;align-items:center;gap:14px;padding:6px 0 22px}
+.pro-av{width:54px;height:54px;border-radius:50%;background:var(--accent-soft);border:2px solid var(--accent-dim);display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:600;color:var(--accent)}
+.pro-name{font-size:17px;font-weight:600}
+.pro-email{font-size:11px;color:var(--text2)}
+.sg{margin-bottom:18px}
+.sg-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);font-weight:700;padding:0 2px;margin-bottom:7px}
+.si{display:flex;align-items:center;gap:11px;padding:13px 14px;background:var(--surface);border:1px solid var(--border);border-radius:11px;margin-bottom:5px;cursor:pointer;transition:background .12s;-webkit-tap-highlight-color:transparent}
+.si:hover{background:var(--surface2)}
+.si-ic{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.si-l{font-size:13px;font-weight:500}
+.si-d{font-size:11px;color:var(--text3)}
+.si-r{margin-left:auto;color:var(--text3);font-size:15px}
+
+/* ── DETAIL PANEL ── */
+#detail{position:absolute;inset:0;background:var(--bg);z-index:50;transform:translateX(100%);transition:transform .3s cubic-bezier(.16,1,.3,1);display:flex;flex-direction:column}
+#detail.open{transform:translateX(0)}
+.det-bar{padding:18px 16px 0;padding-top:calc(18px + env(safe-area-inset-top,0px));display:flex;align-items:center;gap:11px}
+.back{width:34px;height:34px;border-radius:9px;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text);transition:background .12s;-webkit-tap-highlight-color:transparent}
+.back:hover{background:var(--surface2)}
+.det-title{font-size:14px;font-weight:600}
+.det-scroll{flex:1;overflow-y:auto;padding:22px 16px 40px;scrollbar-width:none}
+.det-scroll::-webkit-scrollbar{display:none}
+.det-ic-wrap{display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:22px}
+.det-ic{width:68px;height:68px;border-radius:19px;display:flex;align-items:center;justify-content:center;font-size:30px}
+.det-name{font-size:21px;font-weight:600;letter-spacing:-.3px}
+.det-price{font-family:'DM Mono',monospace;font-size:34px;font-weight:500;letter-spacing:-1px;text-align:center;margin-bottom:3px}
+.det-psub{font-size:11px;color:var(--text2);text-align:center;margin-bottom:26px}
+.detsec{background:var(--surface);border:1px solid var(--border);border-radius:13px;overflow:hidden;margin-bottom:10px}
+.detrow{padding:12px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
+.detrow:last-child{border-bottom:none}
+.detrow-l{font-size:12px;color:var(--text2)}
+.detrow-v{font-size:12px;font-weight:500}
+.detrow-v.mono{font-family:'DM Mono',monospace;font-variant-numeric:tabular-nums}
+.abtn{width:100%;padding:14px;border-radius:11px;font-size:14px;font-weight:600;font-family:inherit;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;transition:opacity .14s,transform .1s;margin-bottom:8px;-webkit-tap-highlight-color:transparent}
+.abtn:active{transform:scale(.98)}
+.abtn.red{background:var(--danger-soft);color:var(--danger);border:1px solid rgba(255,88,112,.22)}
+.abtn.neu{background:var(--surface);color:var(--text2);border:1px solid var(--border)}
+
+/* ── CANCEL SHEET ── */
+#csheet{position:absolute;inset:0;z-index:60;display:flex;flex-direction:column;justify-content:flex-end}
+#csheet.hide{display:none}
+.csheet-bg{position:absolute;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(2px)}
+.csheet-body{position:relative;background:var(--surface);border-radius:22px 22px 0 0;padding:24px 20px;padding-bottom:calc(24px + env(safe-area-inset-bottom,0px));animation:slideUp .3s cubic-bezier(.16,1,.3,1)}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.csheet-handle{width:36px;height:4px;background:var(--surface3);border-radius:2px;margin:0 auto 20px}
+.csheet-title{font-size:17px;font-weight:600;letter-spacing:-.2px;margin-bottom:4px}
+.csheet-sub{font-size:12px;color:var(--text2);margin-bottom:20px}
+.csteps{display:flex;flex-direction:column;gap:0;margin-bottom:22px}
+.cstep{display:flex;gap:14px;padding:12px 0;border-bottom:1px solid var(--border);align-items:flex-start}
+.cstep:last-child{border-bottom:none}
+.cstep-num{width:24px;height:24px;border-radius:50%;background:var(--accent-soft);border:1px solid var(--accent-dim);display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:11px;font-weight:500;color:var(--accent);flex-shrink:0;margin-top:1px}
+.cstep-text{flex:1}
+.cstep-l{font-size:13px;font-weight:500;margin-bottom:2px}
+.cstep-d{font-size:11px;color:var(--text2);line-height:1.5}
+.cancelled-tag{display:none;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:3px 8px;border-radius:5px;background:var(--surface3);color:var(--text3);margin-left:auto}
+.scard.cancelled .cancelled-tag{display:inline-block}
+.scard.cancelled .sprice{color:var(--text3);text-decoration:line-through}
+
+/* ── PAYWALL ── */
+#paywall{position:absolute;inset:0;z-index:70;display:flex;flex-direction:column;justify-content:flex-end}
+#paywall.hide{display:none}
+.pw-bg{position:absolute;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(3px)}
+.pw-body{position:relative;background:var(--surface);border-radius:24px 24px 0 0;padding-bottom:calc(24px + env(safe-area-inset-bottom,0px));overflow:hidden;animation:slideUp .35s cubic-bezier(.16,1,.3,1)}
+.pw-glow{height:140px;background:linear-gradient(180deg,var(--accent-soft) 0%,transparent 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding-top:6px}
+.pw-handle{width:36px;height:4px;background:var(--surface3);border-radius:2px;margin-bottom:8px}
+.pw-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;background:var(--accent-soft);border:1px solid var(--accent-dim);border-radius:20px;font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.6px}
+.pw-badge svg{width:11px;height:11px}
+.pw-title{font-size:22px;font-weight:600;letter-spacing:-.4px;text-align:center;padding:0 24px}
+.pw-price{text-align:center;padding:6px 24px 18px}
+.pw-price-num{font-family:'DM Mono',monospace;font-size:28px;font-weight:500;letter-spacing:-.5px}
+.pw-price-per{font-size:12px;color:var(--text2)}
+.pw-trial{display:inline-block;font-size:11px;font-weight:600;color:var(--accent);background:var(--accent-soft);padding:3px 10px;border-radius:20px;margin-bottom:18px}
+.pw-feats{padding:0 24px;display:flex;flex-direction:column;gap:0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin-bottom:20px}
+.pw-feat{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--border)}
+.pw-feat:last-child{border-bottom:none}
+.pw-feat-ic{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.pw-feat-name{font-size:13px;font-weight:500}
+.pw-feat-desc{font-size:11px;color:var(--text2);margin-top:1px}
+.pw-check{margin-left:auto;color:var(--accent);flex-shrink:0}
+.pw-actions{padding:0 20px}
+.pw-later{width:100%;padding:12px;background:none;border:none;font-family:inherit;font-size:13px;color:var(--text3);cursor:pointer;margin-top:4px;-webkit-tap-highlight-color:transparent}
+.pw-later:hover{color:var(--text2)}
+/* lock indicators */
+.nav-lock{font-size:9px;margin-left:2px;opacity:.55}
+.pro-tag{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;padding:2px 5px;border-radius:4px;background:linear-gradient(135deg,var(--accent-soft),rgba(155,139,255,.15));color:var(--accent);border:1px solid var(--accent-dim);margin-left:6px}
+/* toast */
+.toast{position:absolute;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:9px 18px;font-size:13px;font-weight:500;white-space:nowrap;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+.toast.vis{opacity:1;transform:translateX(-50%) translateY(0)}
+
+@media (prefers-reduced-motion:reduce){
+  .scard{animation:none}
+  *{transition-duration:.01ms!important}
+}
+
+/* ── AUTH ── */
+#auth-screen{position:absolute;inset:0;background:var(--bg);z-index:120;display:flex;flex-direction:column;transition:opacity .4s,transform .4s}
+#auth-screen.gone{opacity:0;transform:scale(.97);pointer-events:none}
+.auth-wrap{flex:1;display:flex;flex-direction:column;justify-content:center;padding:32px 24px;overflow-y:auto}
+.auth-logo{display:flex;align-items:center;gap:10px;margin-bottom:36px}
+.auth-logo-ic{width:38px;height:38px;background:var(--accent-soft);border:1px solid var(--accent-dim);border-radius:11px;display:flex;align-items:center;justify-content:center}
+.auth-logo-ic svg{width:19px;height:19px}
+.auth-logo-name{font-size:20px;font-weight:600;letter-spacing:-.3px}
+.auth-h{font-size:24px;font-weight:600;letter-spacing:-.4px;margin-bottom:6px}
+.auth-sub{font-size:13px;color:var(--text2);margin-bottom:28px;line-height:1.55}
+.auth-field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.auth-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text3)}
+.auth-input{padding:13px 14px;background:var(--surface);border:1.5px solid var(--border);border-radius:11px;font-size:14px;font-family:inherit;color:var(--text);outline:none;transition:border-color .15s}
+.auth-input:focus{border-color:var(--accent-dim)}
+.auth-input::placeholder{color:var(--text3)}
+.auth-input.err{border-color:var(--danger)}
+.auth-error{font-size:12px;color:var(--danger);margin-top:-8px;margin-bottom:6px;min-height:16px;display:none}
+.auth-error.vis{display:block}
+.auth-forgot{font-size:12px;color:var(--text2);text-align:right;margin-top:-8px;margin-bottom:16px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.auth-forgot:hover{color:var(--text)}
+.auth-submit{width:100%;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:11px;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;transition:opacity .15s,transform .1s;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:20px;-webkit-tap-highlight-color:transparent}
+.auth-submit:hover{opacity:.88}
+.auth-submit:active{transform:scale(.98)}
+.auth-submit:disabled{opacity:.45;cursor:not-allowed}
+.auth-divider{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+.auth-divider-line{flex:1;height:1px;background:var(--border)}
+.auth-divider-text{font-size:11px;color:var(--text3);font-weight:500}
+.auth-switch{text-align:center;font-size:13px;color:var(--text2)}
+.auth-switch-link{color:var(--accent);font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.auth-switch-link:hover{opacity:.8}
+/* reset password panel */
+#auth-reset{display:none}
+#auth-reset.vis{display:block}
+.auth-back-link{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text2);cursor:pointer;margin-bottom:24px;width:fit-content;-webkit-tap-highlight-color:transparent}
+.auth-back-link:hover{color:var(--text)}
+/* spinner inside button */
+.btn-spin{width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite}
+</style>
+
+<div id="app">
+  <!-- ONBOARDING -->
+  <div id="onboarding">
+    <!-- Step 1: Welcome -->
+    <div class="ob-step" id="ob1">
+      <div class="ob-logo">
+        <svg viewBox="0 0 30 30" fill="none">
+          <rect x="3" y="7" width="24" height="16" rx="3" stroke="var(--accent)" stroke-width="1.5"/>
+          <path d="M3 12h24" stroke="var(--accent)" stroke-width="1.5"/>
+          <circle cx="8" cy="18" r="1.5" fill="var(--accent)"/>
+          <rect x="11.5" y="16.5" width="7" height="3" rx="1.5" fill="var(--accent)" opacity=".4"/>
+        </svg>
+      </div>
+      <h1 class="ob-h">Subtrack</h1>
+      <p class="ob-p">Find every subscription you're paying — including the ones you forgot about.</p>
+      <div class="ob-feat">
+        <div class="ob-feat-row">
+          <div class="ob-feat-ic" style="background:var(--accent-soft)">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="2" width="12" height="10" rx="2" stroke="var(--accent)" stroke-width="1.3"/><path d="M1 5.5h12" stroke="var(--accent)" stroke-width="1.3"/><circle cx="4" cy="9" r="1" fill="var(--accent)"/></svg>
+          </div>
+          <div><div class="ob-feat-t">Banks & credit cards</div><div class="ob-feat-d">Connect multiple accounts at once</div></div>
+        </div>
+        <div class="ob-feat-row">
+          <div class="ob-feat-ic" style="background:var(--danger-soft)">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1.5L8.3 5h3.7L9 7.5l1.2 3.8L7 9l-3.2 2.3L5 7.5 2 5h3.7L7 1.5z" fill="var(--danger)" opacity=".8"/></svg>
+          </div>
+          <div><div class="ob-feat-t">Spot forgotten subscriptions</div><div class="ob-feat-d">Flag what you no longer use</div></div>
+        </div>
+        <div class="ob-feat-row">
+          <div class="ob-feat-ic" style="background:var(--warning-soft)">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 10.5l3.5-3.5 3 2.5 3.5-5.5" stroke="var(--warning)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div><div class="ob-feat-t">See your full spend</div><div class="ob-feat-d">Category breakdown and trends</div></div>
+        </div>
+      </div>
+      <button class="btn-cta" style="width:100%" onclick="goStep2()">Get started →</button>
+    </div>
+
+    <!-- Step 2: Account selection -->
+    <div class="ob-step hidden" id="ob2">
+      <div class="ob2-back" onclick="goStep1()">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M9.5 12L5 7.5 9.5 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="ob2-hdr">
+        <div class="ob2-title">Connect your accounts</div>
+        <div class="ob2-sub">Select the accounts where you pay for subscriptions.</div>
+      </div>
+      <div class="ob-tip">
+        <span class="ob-tip-ic">💡</span>
+        <div class="ob-tip-t"><strong>Add your credit cards.</strong> Most subscriptions charge to a card, not directly to your bank. Connect your cards for a complete picture.</div>
+      </div>
+      <div class="ob-scroll">
+        <div class="ob-sec-lbl">Checking &amp; savings</div>
+        <div class="acct-list" id="bank-list">
+          <div class="acct-row" onclick="toggleAcct(this)">
+            <div class="acct-dot" style="background:#0B5ED7;color:#fff">Ch</div>
+            <div class="acct-info"><div class="acct-name">Chase Bank</div><div class="acct-sub">Checking ···4821</div></div>
+            <div class="acct-check"><svg class="acct-check-ic" width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M2 5.5l2.5 2.5 4.5-4.5" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          </div>
+          <div class="acct-row" onclick="toggleAcct(this)">
+            <div class="acct-dot" style="background:#E31837;color:#fff">BA</div>
+            <div class="acct-info"><div class="acct-name">Bank of America</div><div class="acct-sub">Savings ···7702</div></div>
+            <div class="acct-check"><svg class="acct-check-ic" width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M2 5.5l2.5 2.5 4.5-4.5" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          </div>
+          <div class="acct-row" onclick="toggleAcct(this)">
+            <div class="acct-dot" style="background:#4CAF50;color:#fff">SEB</div>
+            <div class="acct-info"><div class="acct-name">SEB</div><div class="acct-sub">Checking ···3310</div></div>
+            <div class="acct-check"><svg class="acct-check-ic" width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M2 5.5l2.5 2.5 4.5-4.5" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          </div>
+        </div>
+
+        <div class="ob-sec-lbl">Credit cards</div>
+        <div class="acct-list">
+          <div class="acct-row" onclick="toggleAcct(this)">
+            <div class="acct-dot" style="background:#1A1F71;color:#fff">Vi</div>
+            <div class="acct-info"><div class="acct-name">Chase Sapphire</div><div class="acct-sub">Visa ···9214 · most subscriptions here</div></div>
+            <div class="acct-check"><svg class="acct-check-ic" width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M2 5.5l2.5 2.5 4.5-4.5" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          </div>
+          <div class="acct-row" onclick="toggleAcct(this)">
+            <div class="acct-dot" style="background:#007BC1;color:#fff">Ax</div>
+            <div class="acct-info"><div class="acct-name">Amex Gold</div><div class="acct-sub">Amex ···6603</div></div>
+            <div class="acct-check"><svg class="acct-check-ic" width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M2 5.5l2.5 2.5 4.5-4.5" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          </div>
+          <div class="acct-row" onclick="toggleAcct(this)">
+            <div class="acct-dot" style="background:#CC0000;color:#fff">Ci</div>
+            <div class="acct-info"><div class="acct-name">Citi Double Cash</div><div class="acct-sub">Mastercard ···1188</div></div>
+            <div class="acct-check"><svg class="acct-check-ic" width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M2 5.5l2.5 2.5 4.5-4.5" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          </div>
+          <div class="acct-row" onclick="toggleAcct(this)">
+            <div class="acct-dot" style="background:#9D2235;color:#fff">Ca</div>
+            <div class="acct-info"><div class="acct-name">Capital One Venture</div><div class="acct-sub">Visa ···5541</div></div>
+            <div class="acct-check"><svg class="acct-check-ic" width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M2 5.5l2.5 2.5 4.5-4.5" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          </div>
+        </div>
+        <div style="height:8px"></div>
+      </div>
+      <div class="ob-footer">
+        <button class="btn-cta" id="scan-btn" disabled onclick="startConnect()">Select accounts to continue</button>
+        <div class="sel-count" id="sel-count"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOADING -->
+  <div id="loading">
+    <div class="spin"></div>
+    <div class="load-label">Analyzing transactions</div>
+    <div class="load-step" id="lstep"></div>
+  </div>
+
+  <!-- MAIN APP -->
+  <div id="main">
+    <div class="app-bar">
+      <div>
+        <div class="app-bar-title">Subtrack</div>
+        <div class="app-bar-sub">September 2026</div>
+      </div>
+      <div class="av">N</div>
+    </div>
+
+    <!-- HOME VIEW -->
+    <div id="view-home" class="scroll">
+      <div class="hero">
+        <div class="hero-lbl">Monthly recurring</div>
+        <div class="hero-num" id="hnum">$214.90</div>
+        <div class="hero-sub" id="hsub">13 subscriptions · per month</div>
+        <div class="stats">
+          <div><div class="stat-v" id="st-cnt">13</div><div class="stat-l">Active</div></div>
+          <div><div class="stat-v red" id="st-bad">0</div><div class="stat-l">Unused</div></div>
+          <div><div class="stat-v grn" id="st-save">$0</div><div class="stat-l">Could save</div></div>
+        </div>
+      </div>
+
+      <div class="save-banner hide" id="sbanner" onclick="jumpUnused()">
+        <div class="save-ic">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1.5L8.5 5.5H13L9.5 8L10.8 12L7 9.5L3.2 12L4.5 8L1 5.5H5.5L7 1.5Z" fill="var(--danger)"/></svg>
+        </div>
+        <div><div class="save-t" id="stitle">You could save $0/mo</div><div class="save-d" id="sdetail">subscriptions flagged unused</div></div>
+        <span class="save-arr">›</span>
+      </div>
+
+      <div class="ftabs">
+        <div class="ftab on" onclick="filt('all',this)">All</div>
+        <div class="ftab" onclick="filt('active',this)">Active</div>
+        <div class="ftab" onclick="filt('unused',this)">Unused</div>
+        <div class="ftab" onclick="filt('entertainment',this)">Entertainment</div>
+        <div class="ftab" onclick="filt('productivity',this)">Productivity</div>
+        <div class="ftab" onclick="filt('health',this)">Health</div>
+      </div>
+
+      <div class="sub-list" id="slist"></div>
+      <div class="empty" id="empty">No subscriptions in this filter.</div>
+    </div>
+
+    <!-- INSIGHTS VIEW -->
+    <div id="view-ins" class="scroll">
+      <div style="padding-top:6px">
+        <div class="ins-h">Spending breakdown</div>
+        <div class="sec-hdr"><span class="sec-t">By category</span><span class="sec-r" id="ins-tot">$214.90/mo</span></div>
+        <div class="catbars" id="catbars"></div>
+        <div class="sec-hdr"><span class="sec-t">Last 6 months</span></div>
+        <div class="mo-chart"><div class="mo-bars" id="mobars"></div></div>
+        <div style="padding:0 16px 110px">
+          <div class="sec-hdr" style="padding:0 0 9px"><span class="sec-t">Top spends</span></div>
+          <div class="detsec" id="topspends"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROFILE VIEW -->
+    <div id="view-pro" class="scroll">
+      <div style="padding-top:6px">
+        <div class="pro-head">
+          <div class="pro-av">N</div>
+          <div><div class="pro-name">Nicklas</div><div class="pro-email">biskopsgrand@gmail.com</div></div>
+        </div>
+        <div class="sg">
+          <div class="sg-lbl">Account</div>
+          <div class="si"><div class="si-ic" style="background:var(--accent-soft)"><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1.5" y="3" width="12" height="9" rx="2" stroke="var(--accent)" stroke-width="1.3"/><path d="M1.5 6h12" stroke="var(--accent)" stroke-width="1.3"/><circle cx="4.5" cy="9.5" r="1" fill="var(--accent)"/></svg></div><div><div class="si-l">Connected bank</div><div class="si-d">Chase Bank · ending 4821</div></div><span class="si-r">›</span></div>
+          <div class="si"><div class="si-ic" style="background:var(--warning-soft)"><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M7.5 1.5L9 5.5H13.5L10 8.2L11.3 12.5L7.5 10L3.7 12.5L5 8.2L1.5 5.5H6L7.5 1.5Z" stroke="var(--warning)" stroke-width="1.3" fill="none"/></svg></div><div><div class="si-l">Renewal alerts</div><div class="si-d">Notified 3 days before charges</div></div><span class="si-r">›</span></div>
+        </div>
+        <div class="sg">
+          <div class="sg-lbl">Subscription</div>
+          <div class="si"><div class="si-ic" style="background:var(--accent-soft)"><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="5.5" stroke="var(--accent)" stroke-width="1.3"/><path d="M5.5 7.5l1.5 1.5L9.5 6" stroke="var(--accent)" stroke-width="1.3" stroke-linecap="round"/></svg></div><div><div class="si-l">Subtrack Pro</div><div class="si-d">$5.99/mo · renews Oct 15</div></div><span class="si-r" style="color:var(--accent);font-size:10px;font-weight:700">ACTIVE</span></div>
+        </div>
+        <div class="sg">
+          <div class="sg-lbl">Privacy</div>
+          <div class="si"><div class="si-ic" style="background:var(--danger-soft)"><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M5 1.5h5a2 2 0 012 2v7.5a2 2 0 01-2 2H5a2 2 0 01-2-2V3.5a2 2 0 012-2z" stroke="var(--danger)" stroke-width="1.3"/><path d="M9.5 1.5v2M5.5 1.5v2M3 5.5h9" stroke="var(--danger)" stroke-width="1.3" stroke-linecap="round"/></svg></div><div><div class="si-l">Disconnect bank</div><div class="si-d">Remove all connected accounts</div></div><span class="si-r">›</span></div>
+          <div class="si" onclick="doSignOut()" style="margin-top:2px"><div class="si-ic" style="background:var(--danger-soft)"><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M5.5 2H3a1 1 0 00-1 1v9a1 1 0 001 1h2.5" stroke="var(--danger)" stroke-width="1.3" stroke-linecap="round"/><path d="M10 10l3-3-3-3M13 7H6" stroke="var(--danger)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div><div class="si-l" style="color:var(--danger)">Sign out</div><div class="si-d">Return to login screen</div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bnav">
+      <div class="ni on" id="ni-home" onclick="nav('home')">
+        <svg viewBox="0 0 20 20" fill="none"><path d="M3 9l7-7 7 7v8a1 1 0 01-1 1H4a1 1 0 01-1-1V9z" stroke="currentColor" stroke-width="1.5"/><path d="M7 18v-5h6v5" stroke="currentColor" stroke-width="1.5"/></svg>
+        <span class="nl">Home</span>
+      </div>
+      <div class="ni" id="ni-ins" onclick="nav('ins')">
+        <svg viewBox="0 0 20 20" fill="none"><path d="M3 14l4-4 4 3 4-7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 17h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <span class="nl">Insights <span class="nav-lock" id="ins-lock">🔒</span></span>
+      </div>
+      <div class="ni" id="ni-pro" onclick="nav('pro')">
+        <svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="7" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M4 17c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <span class="nl">Profile</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- AUTH SCREEN -->
+  <div id="auth-screen">
+    <div class="auth-wrap">
+      <div class="auth-logo">
+        <div class="auth-logo-ic">
+          <svg viewBox="0 0 30 30" fill="none"><rect x="3" y="7" width="24" height="16" rx="3" stroke="var(--accent)" stroke-width="1.5"/><path d="M3 12h24" stroke="var(--accent)" stroke-width="1.5"/><circle cx="8" cy="18" r="1.5" fill="var(--accent)"/><rect x="11.5" y="16.5" width="7" height="3" rx="1.5" fill="var(--accent)" opacity=".4"/></svg>
+        </div>
+        <span class="auth-logo-name">Subtrack</span>
+      </div>
+
+      <!-- LOGIN -->
+      <div id="auth-login">
+        <div class="auth-h">Welcome back</div>
+        <div class="auth-sub">Sign in to see your subscriptions.</div>
+        <div class="auth-field">
+          <label class="auth-label" for="login-email">Email</label>
+          <input class="auth-input" id="login-email" type="email" placeholder="you@example.com" autocomplete="email">
+        </div>
+        <div class="auth-field">
+          <label class="auth-label" for="login-pass">Password</label>
+          <input class="auth-input" id="login-pass" type="password" placeholder="••••••••" autocomplete="current-password">
+        </div>
+        <div class="auth-forgot" onclick="showReset()">Forgot password?</div>
+        <div class="auth-error" id="login-error"></div>
+        <button class="auth-submit" id="login-btn" onclick="doLogin()">Sign in</button>
+        <div class="auth-switch">No account? <span class="auth-switch-link" onclick="showSignup()">Create one</span></div>
+      </div>
+
+      <!-- SIGNUP -->
+      <div id="auth-signup" style="display:none">
+        <div class="auth-h">Create account</div>
+        <div class="auth-sub">Find every subscription you're paying for.</div>
+        <div class="auth-field">
+          <label class="auth-label" for="su-name">Name</label>
+          <input class="auth-input" id="su-name" type="text" placeholder="Nicklas" autocomplete="given-name">
+        </div>
+        <div class="auth-field">
+          <label class="auth-label" for="su-email">Email</label>
+          <input class="auth-input" id="su-email" type="email" placeholder="you@example.com" autocomplete="email">
+        </div>
+        <div class="auth-field">
+          <label class="auth-label" for="su-pass">Password</label>
+          <input class="auth-input" id="su-pass" type="password" placeholder="At least 8 characters" autocomplete="new-password">
+        </div>
+        <div class="auth-error" id="signup-error"></div>
+        <button class="auth-submit" id="signup-btn" onclick="doSignup()" style="margin-top:6px">Create account</button>
+        <div class="auth-switch">Already have one? <span class="auth-switch-link" onclick="showLogin()">Sign in</span></div>
+      </div>
+
+      <!-- RESET PASSWORD -->
+      <div id="auth-reset">
+        <div class="auth-back-link" onclick="showLogin()">
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M8.5 10.5L4 6.5l4.5-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Back to sign in
+        </div>
+        <div class="auth-h">Reset password</div>
+        <div class="auth-sub">Enter your email and we'll send a reset link.</div>
+        <div class="auth-field">
+          <label class="auth-label" for="reset-email">Email</label>
+          <input class="auth-input" id="reset-email" type="email" placeholder="you@example.com" autocomplete="email">
+        </div>
+        <div class="auth-error" id="reset-error"></div>
+        <button class="auth-submit" id="reset-btn" onclick="doReset()">Send reset link</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
+
+  <!-- PAYWALL -->
+  <div id="paywall" class="hide">
+    <div class="pw-bg" onclick="closePaywall()"></div>
+    <div class="pw-body">
+      <div class="pw-glow">
+        <div class="pw-handle"></div>
+        <div class="pw-badge">
+          <svg viewBox="0 0 12 12" fill="none"><path d="M6 1l1.3 3.2H11L8.3 6.4l1 3.3L6 7.9l-3.3 1.8 1-3.3L1 4.2h3.7L6 1z" fill="currentColor"/></svg>
+          Subtrack Pro
+        </div>
+      </div>
+      <div style="text-align:center;padding:16px 24px 0">
+        <div class="pw-title" id="pw-title">Unlock full cancellation tools</div>
+      </div>
+      <div class="pw-price">
+        <span class="pw-price-num">$5.99</span><span class="pw-price-per"> / month</span>
+      </div>
+      <div style="text-align:center;margin-bottom:0"><span class="pw-trial">7-day free trial — cancel anytime</span></div>
+      <div class="pw-feats">
+        <div class="pw-feat">
+          <div class="pw-feat-ic" style="background:var(--danger-soft)"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M3 3l7 7M10 3l-7 7" stroke="var(--danger)" stroke-width="1.5" stroke-linecap="round"/></svg></div>
+          <div><div class="pw-feat-name">Cancel any subscription</div><div class="pw-feat-desc">Deep-links to exact cancellation pages</div></div>
+          <svg class="pw-check" width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="6" stroke="var(--accent)" stroke-width="1.3"/><path d="M4.5 7.5l2 2 4-4" stroke="var(--accent)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="pw-feat">
+          <div class="pw-feat-ic" style="background:rgba(155,139,255,.12)"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 10l3.5-3.5 3 2.5 3.5-5.5" stroke="var(--cat-pro)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <div><div class="pw-feat-name">Insights & spending trends</div><div class="pw-feat-desc">Category breakdown and 6-month history</div></div>
+          <svg class="pw-check" width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="6" stroke="var(--accent)" stroke-width="1.3"/><path d="M4.5 7.5l2 2 4-4" stroke="var(--accent)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="pw-feat">
+          <div class="pw-feat-ic" style="background:var(--warning-soft)"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 2a4.5 4.5 0 100 9 4.5 4.5 0 000-9z" stroke="var(--warning)" stroke-width="1.3"/><path d="M6.5 4.5v2.5l1.5 1" stroke="var(--warning)" stroke-width="1.3" stroke-linecap="round"/></svg></div>
+          <div><div class="pw-feat-name">Renewal alerts</div><div class="pw-feat-desc">Notified 3 days before every charge</div></div>
+          <svg class="pw-check" width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="6" stroke="var(--accent)" stroke-width="1.3"/><path d="M4.5 7.5l2 2 4-4" stroke="var(--accent)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="pw-feat">
+          <div class="pw-feat-ic" style="background:var(--accent-soft)"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1.5L7.8 5H11.5L8.5 7.2l1.1 3.5-3.1-2-3.1 2 1.1-3.5L1.5 5h3.7L6.5 1.5z" fill="var(--accent)" opacity=".7"/></svg></div>
+          <div><div class="pw-feat-name">Savings tracking</div><div class="pw-feat-desc">See exactly how much you've saved</div></div>
+          <svg class="pw-check" width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="6" stroke="var(--accent)" stroke-width="1.3"/><path d="M4.5 7.5l2 2 4-4" stroke="var(--accent)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+      </div>
+      <div class="pw-actions">
+        <button class="btn-cta" onclick="doUpgrade()">Start free trial →</button>
+        <button class="pw-later" onclick="closePaywall()">Maybe later</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CANCEL SHEET -->
+  <div id="csheet" class="hide">
+    <div class="csheet-bg" onclick="closeCancel()"></div>
+    <div class="csheet-body">
+      <div class="csheet-handle"></div>
+      <div class="csheet-title" id="cs-title">Cancel Netflix</div>
+      <div class="csheet-sub" id="cs-sub">Follow these steps to cancel. It takes about 2 minutes.</div>
+      <a id="cs-deeplink" href="#" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="display:flex;align-items:center;gap:9px;padding:12px 14px;background:var(--accent-soft);border:1px solid var(--accent-dim);border-radius:11px;text-decoration:none;color:var(--accent);font-size:13px;font-weight:600;margin-bottom:16px;transition:background .14s">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5.5 2.5H3a1 1 0 00-1 1v7.5a1 1 0 001 1h7.5a1 1 0 001-1V8.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M8.5 2.5H11.5V5.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 7L11.5 2.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+        <span id="cs-deeplink-label">Open cancellation page</span>
+        <span style="margin-left:auto;opacity:.6">↗</span>
+      </a>
+      <div class="csteps" id="cs-steps"></div>
+      <button class="abtn red" style="margin-bottom:8px" onclick="confirmCancel()">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3.5 3.5l7 7M10.5 3.5l-7 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        I've cancelled it — remove from list
+      </button>
+      <button class="abtn neu" onclick="closeCancel()">Not yet</button>
+    </div>
+  </div>
+
+  <!-- DETAIL PANEL -->
+  <div id="detail">
+    <div class="det-bar">
+      <div class="back" onclick="closeDetail()">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M9.5 12L5 7.5 9.5 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <span class="det-title">Subscription details</span>
+    </div>
+    <div class="det-scroll" id="detcontent"></div>
+  </div>
+</div>
+
+<script>
+const SUBS = [
+  {id:1,  name:'Netflix',              icon:'🎬', cat:'entertainment', clr:'#E50914', price:15.99, last:'Sep 10', next:'Oct 10', since:'Jan 2021', unused:false},
+  {id:2,  name:'Spotify',             icon:'🎵', cat:'entertainment', clr:'#1DB954', price:9.99,  last:'Sep 7',  next:'Oct 7',  since:'Mar 2019', unused:false},
+  {id:3,  name:'Adobe Creative Cloud',icon:'🎨', cat:'productivity',  clr:'#FF0000', price:54.99, last:'Sep 1',  next:'Oct 1',  since:'Aug 2022', unused:false},
+  {id:4,  name:'LinkedIn Premium',    icon:'💼', cat:'productivity',  clr:'#0A66C2', price:39.99, last:'Sep 5',  next:'Oct 5',  since:'Feb 2023', unused:false},
+  {id:5,  name:'Headspace',           icon:'🧘', cat:'health',        clr:'#F47D31', price:12.99, last:'Sep 3',  next:'Oct 3',  since:'Jan 2024', unused:false},
+  {id:6,  name:'Xbox Game Pass',      icon:'🎮', cat:'entertainment', clr:'#107C10', price:14.99, last:'Sep 12',next:'Oct 12',since:'Dec 2022', unused:false},
+  {id:7,  name:'Hulu',                icon:'📺', cat:'entertainment', clr:'#3DBB3D', price:17.99, last:'Sep 9', next:'Oct 9', since:'Sep 2021', unused:false},
+  {id:8,  name:'Dropbox Plus',        icon:'☁️', cat:'productivity',  clr:'#0061FF', price:11.99, last:'Sep 2', next:'Oct 2', since:'Jul 2020', unused:false},
+  {id:9,  name:'Duolingo Plus',       icon:'🦜', cat:'health',        clr:'#58CC02', price:6.99,  last:'Sep 14',next:'Oct 14',since:'Mar 2024', unused:false},
+  {id:10, name:'Amazon Prime',        icon:'📦', cat:'productivity',  clr:'#FF9900', price:14.99, last:'Sep 8', next:'Oct 8', since:'Nov 2018', unused:false},
+  {id:11, name:'NY Times',            icon:'📰', cat:'productivity',  clr:'#333',    price:4.00,  last:'Sep 6', next:'Oct 6', since:'Oct 2023', unused:false},
+  {id:12, name:'NordVPN',             icon:'🛡️', cat:'productivity',  clr:'#4687FF', price:4.99,  last:'Sep 15',next:'Oct 15',since:'Jun 2023', unused:false},
+  {id:13, name:'Calm',                icon:'🌊', cat:'health',        clr:'#3454D1', price:14.99, last:'Sep 4', next:'Oct 4', since:'Feb 2024', unused:false},
+];
+const CC = {entertainment:'var(--cat-ent)',productivity:'var(--cat-pro)',health:'var(--cat-hlth)'};
+let curFilt = 'all';
+
+const fmt = n => '$' + n.toFixed(2);
+
+function totals() {
+  const total = SUBS.reduce((s,x)=>s+x.price,0);
+  const unusedAmt = SUBS.filter(x=>x.unused).reduce((s,x)=>s+x.price,0);
+  const unusedCnt = SUBS.filter(x=>x.unused).length;
+  return {total, unusedAmt, unusedCnt};
+}
+
+function updateHero() {
+  const {total, unusedAmt, unusedCnt} = totals();
+  document.getElementById('hnum').textContent = fmt(total);
+  document.getElementById('hsub').textContent = SUBS.length + ' subscriptions · per month';
+  document.getElementById('st-cnt').textContent = SUBS.filter(x=>!x.unused).length;
+  document.getElementById('st-bad').textContent = unusedCnt;
+  document.getElementById('st-save').textContent = fmt(unusedAmt);
+  document.getElementById('ins-tot').textContent = fmt(total)+'/mo';
+  const ban = document.getElementById('sbanner');
+  if (unusedCnt > 0) {
+    ban.classList.remove('hide');
+    document.getElementById('stitle').textContent = 'You could save '+fmt(unusedAmt)+'/mo';
+    document.getElementById('sdetail').textContent = unusedCnt+' subscription'+(unusedCnt>1?'s':'')+' flagged as unused';
+  } else {
+    ban.classList.add('hide');
+  }
+}
+
+function renderList() {
+  const list = document.getElementById('slist');
+  const emp = document.getElementById('empty');
+  list.innerHTML = '';
+  const items = SUBS.filter(s => {
+    if (curFilt==='all') return true;
+    if (curFilt==='unused') return s.unused;
+    if (curFilt==='active') return !s.unused;
+    return s.cat===curFilt;
+  });
+  if (!items.length) { emp.classList.add('vis'); return; }
+  emp.classList.remove('vis');
+  items.forEach(s => {
+    const d = document.createElement('div');
+    d.className = 'scard'+(s.unused?' bad':'');
+    d.innerHTML = `
+      <div class="sic" style="background:${s.clr}18">${s.icon}</div>
+      <div class="sinf">
+        <div class="sname">${s.name}</div>
+        <div class="smeta">
+          <span class="scat-dot" style="background:${CC[s.cat]}"></span>
+          <span>${s.cat}</span><span>·</span><span>Next ${s.next}</span>
+        </div>
+        <div class="ubadge">Unused</div>
+      </div>
+      <div class="sright">
+        <div class="sprice${s.unused?' red':''}">${fmt(s.price)}</div>
+        <label class="tog" onclick="event.stopPropagation()" title="Mark as unused">
+          <input type="checkbox" ${s.unused?'checked':''} onchange="togUnused(${s.id},this.checked)">
+          <span class="tog-sl"></span>
+        </label>
+      </div>`;
+    d.addEventListener('click', e => { if (!e.target.closest('.tog')) openDet(s.id); });
+    list.appendChild(d);
+  });
+  updateHero();
+}
+
+function togUnused(id, val) {
+  const s = SUBS.find(x=>x.id===id);
+  if (s) { s.unused=val; renderList(); renderIns(); }
+}
+
+function filt(f, el) {
+  curFilt = f;
+  document.querySelectorAll('.ftab').forEach(t=>t.classList.remove('on'));
+  el.classList.add('on');
+  renderList();
+}
+
+function jumpUnused() {
+  filt('unused', document.querySelector('.ftab:nth-child(3)'));
+  nav('home');
+}
+
+// ── DETAIL ──
+function openDet(id) {
+  const s = SUBS.find(x=>x.id===id);
+  if (!s) return;
+  renderDet(s);
+  document.getElementById('detail').classList.add('open');
+}
+function closeDetail() { document.getElementById('detail').classList.remove('open'); }
+
+function spentSince(s) {
+  const ms = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const p = s.since.split(' ');
+  const m = ms.indexOf(p[0]), y = parseInt(p[1]);
+  const mo = (2026-y)*12+(8-m);
+  return s.price * Math.max(mo,1);
+}
+
+function renderDet(s) {
+  const annual = s.price*12;
+  document.getElementById('detcontent').innerHTML = `
+    <div class="det-ic-wrap">
+      <div class="det-ic" style="background:${s.clr}18">${s.icon}</div>
+      <div class="det-name">${s.name}</div>
+    </div>
+    <div class="det-price">${fmt(s.price)}</div>
+    <div class="det-psub">per month · ${fmt(annual)} per year</div>
+    <div class="detsec">
+      <div class="detrow"><span class="detrow-l">Category</span><span class="detrow-v" style="color:${CC[s.cat]}">${s.cat}</span></div>
+      <div class="detrow"><span class="detrow-l">Last charged</span><span class="detrow-v mono">${s.last}</span></div>
+      <div class="detrow"><span class="detrow-l">Next charge</span><span class="detrow-v mono">${s.next}</span></div>
+      <div class="detrow"><span class="detrow-l">Subscribed since</span><span class="detrow-v mono">${s.since}</span></div>
+      <div class="detrow"><span class="detrow-l">Total spent</span><span class="detrow-v mono">${fmt(spentSince(s))}</span></div>
+    </div>
+    <button class="abtn ${s.unused?'neu':'red'}" onclick="togFromDet(${s.id})">
+      ${s.unused
+        ? `<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2.5 7l3 3 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Mark as active`
+        : `<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3.5 3.5l7 7M10.5 3.5l-7 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Flag as unused`}
+    </button>
+    <button class="abtn ${isPro?'neu':'neu'}" onclick="${isPro?`openCancel(${s.id})`:`showPaywall('cancel')`}" style="${isPro?'':'opacity:.7'}">
+      ${isPro
+        ? `<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3.5 3.5l7 7M10.5 3.5l-7 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Cancel subscription`
+        : `<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9.5 6V4.5a3 3 0 00-5 0V6M4 6h6a1 1 0 011 1v3.5a1 1 0 01-1 1H4a1 1 0 01-1-1V7a1 1 0 011-1z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>Cancel subscription <span class="pro-tag">Pro</span>`
+      }
+    </button>
+    <button class="abtn neu" onclick="closeDetail()">Close</button>`;
+}
+
+function togFromDet(id) {
+  const s = SUBS.find(x=>x.id===id);
+  if (s) { s.unused=!s.unused; renderList(); renderDet(s); renderIns(); }
+}
+
+// ── INSIGHTS ──
+function renderIns() {
+  const cats = {};
+  SUBS.forEach(s => { cats[s.cat]=(cats[s.cat]||0)+s.price; });
+  const total = Object.values(cats).reduce((a,b)=>a+b,0);
+  const sorted = Object.entries(cats).sort((a,b)=>b[1]-a[1]);
+  const cb = document.getElementById('catbars');
+  cb.innerHTML = '';
+  sorted.forEach(([c,a]) => {
+    const pct = (a/total*100).toFixed(0);
+    const el = document.createElement('div');
+    el.className='cr';
+    el.innerHTML=`<div class="cr-top"><span class="cr-name">${c.charAt(0).toUpperCase()+c.slice(1)}</span><span class="cr-amt">${fmt(a)}/mo</span></div><div class="bar-bg"><div class="bar-fill" style="width:0%;background:${CC[c]}" data-w="${pct}%"></div></div>`;
+    cb.appendChild(el);
+  });
+  requestAnimationFrame(()=>{ cb.querySelectorAll('.bar-fill').forEach(e=>e.style.width=e.dataset.w); });
+
+  const mo = [198,211,207,219,214,214.90];
+  const lbl = ['Apr','May','Jun','Jul','Aug','Sep'];
+  const mx = Math.max(...mo);
+  document.getElementById('mobars').innerHTML = mo.map((v,i)=>{
+    const h = Math.round((v/mx)*64);
+    return `<div class="mo-bw"><div class="mo-b${i===mo.length-1?' cur':''}" style="height:${h}px"></div><span class="mo-lbl">${lbl[i]}</span></div>`;
+  }).join('');
+
+  const top = [...SUBS].sort((a,b)=>b.price-a.price).slice(0,5);
+  document.getElementById('topspends').innerHTML = top.map(s=>`
+    <div class="detrow">
+      <div style="display:flex;align-items:center;gap:9px"><span style="font-size:15px">${s.icon}</span><span style="font-size:12px;font-weight:500">${s.name}</span></div>
+      <span style="font-family:'DM Mono',monospace;font-size:12px;font-variant-numeric:tabular-nums">${fmt(s.price)}</span>
+    </div>`).join('');
+
+  updateHero();
+}
+
+// ── PAYWALL ──
+let isPro = false;
+const PW_TITLES = {
+  cancel:   'Unlock cancellation tools',
+  insights: 'Unlock Insights & trends',
+};
+function showPaywall(feature) {
+  document.getElementById('pw-title').textContent = PW_TITLES[feature] || 'Upgrade to Subtrack Pro';
+  document.getElementById('paywall').classList.remove('hide');
+}
+function closePaywall() { document.getElementById('paywall').classList.add('hide'); }
+function doUpgrade() {
+  isPro = true;
+  closePaywall();
+  document.getElementById('ins-lock').hidden = true;
+  showToast('🎉 Welcome to Pro! Trial started.');
+}
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('vis');
+  setTimeout(()=>t.classList.remove('vis'), 2800);
+}
+
+// ── NAV ──
+const VIEW_DISPLAY = {home:'',ins:'flex',pro:'flex'};
+function nav(v) {
+  if (v==='ins' && !isPro) { showPaywall('insights'); return; }
+  ['home','ins','pro'].forEach(id=>{
+    document.getElementById('view-'+id).style.display='none';
+    document.getElementById('ni-'+id).classList.remove('on');
+  });
+  document.getElementById('view-'+v).style.display = VIEW_DISPLAY[v];
+  document.getElementById('ni-'+v).classList.add('on');
+  if (v==='ins') renderIns();
+}
+
+// ── ONBOARDING ──
+function goStep2() {
+  document.getElementById('ob1').classList.add('hidden');
+  document.getElementById('ob2').classList.remove('hidden');
+}
+function goStep1() {
+  document.getElementById('ob2').classList.add('hidden');
+  document.getElementById('ob1').classList.remove('hidden');
+}
+function toggleAcct(el) {
+  el.classList.toggle('sel');
+  updateSelCount();
+}
+function updateSelCount() {
+  const n = document.querySelectorAll('.acct-row.sel').length;
+  const btn = document.getElementById('scan-btn');
+  const lbl = document.getElementById('sel-count');
+  btn.disabled = n === 0;
+  if (n === 0) {
+    btn.textContent = 'Select accounts to continue';
+    lbl.textContent = '';
+  } else {
+    const cards = document.querySelectorAll('#ob2 .acct-list:nth-of-type(2) .acct-row.sel').length;
+    btn.textContent = `Scan ${n} account${n>1?'s':''} →`;
+    lbl.textContent = cards > 0 ? `${cards} credit card${cards>1?'s':''} included — subscriptions will be detected` : 'Add a credit card for better coverage';
+  }
+}
+const LOAD_STEPS=['Connecting to accounts...','Reading transactions...','Identifying recurring charges...','Detecting subscriptions...','Calculating your savings...','Done!'];
+function startConnect() {
+  document.getElementById('onboarding').classList.add('gone');
+  const ld = document.getElementById('loading');
+  const st = document.getElementById('lstep');
+  ld.classList.add('vis');
+  let i=0;
+  const iv = setInterval(()=>{
+    st.textContent = LOAD_STEPS[i]||'';
+    i++;
+    if (i>=LOAD_STEPS.length) {
+      clearInterval(iv);
+      setTimeout(()=>{
+        ld.classList.remove('vis');
+        document.getElementById('main').classList.add('vis');
+        renderList();
+        renderIns();
+      }, 500);
+    }
+  }, 480);
+}
+
+// ── CANCEL SHEET ──
+const CANCEL_STEPS = {
+  'Netflix':              [{l:'Go to netflix.com',d:'Open Netflix in your browser and sign in.'},{l:'Open Account settings',d:'Click your profile icon → Account.'},{l:'Cancel Membership',d:'Scroll to Membership & Billing and click Cancel Membership.'},{l:'Confirm cancellation',d:'Follow the prompts. Access continues until the billing period ends.'}],
+  'Spotify':              [{l:'Go to spotify.com/account',d:'Sign in to your Spotify account on the web.'},{l:'Go to Your Plan',d:'Click "Change plan" under Your current plan.'},{l:'Cancel Premium',d:'Scroll down and click Cancel Premium.'},{l:'Confirm',d:'Your account reverts to free — you keep playlists.'}],
+  'Adobe Creative Cloud': [{l:'Go to account.adobe.com',d:'Sign in with your Adobe ID.'},{l:'Manage plan',d:'Under Plans & Products, click Manage plan.'},{l:'Cancel plan',d:'Click Cancel plan and follow the steps.'},{l:'Note the fee',d:'Cancelling mid-term may incur an early termination fee. Check before confirming.'}],
+  'LinkedIn Premium':     [{l:'Go to linkedin.com/premium',d:'Click the LinkedIn Premium badge in your nav.'},{l:'Manage subscription',d:'Click "Manage subscription" on the right.'},{l:'Cancel subscription',d:'Select Cancel subscription and confirm.'},{l:'Done',d:'You keep Premium until the end of the billing period.'}],
+  'Headspace':            [{l:'Go to headspace.com',d:'Sign in to your account.'},{l:'Account settings',d:'Click your name → Subscription.'},{l:'Cancel renewal',d:'Click Cancel renewal and confirm.'},{l:'Or cancel via App Store',d:'If subscribed through iOS/Android, cancel in your phone\'s subscription settings instead.'}],
+  'Xbox Game Pass':       [{l:'Go to microsoft.com/billing',d:'Sign in with your Microsoft account.'},{l:'Find Game Pass',d:'Under Services & subscriptions, find Game Pass.'},{l:'Cancel',d:'Click Cancel and follow the prompts.'},{l:'Access until end of period',d:'You can keep playing until the billing period expires.'}],
+  'Hulu':                 [{l:'Go to hulu.com/account',d:'Sign in to your Hulu account.'},{l:'Cancel subscription',d:'Under Your Subscription, click Cancel.'},{l:'Select a reason',d:'Choose a reason and confirm.'},{l:'Note: bundles',d:'If you have a Disney+/Hulu bundle, cancelling Hulu cancels the whole bundle.'}],
+  'Dropbox Plus':         [{l:'Go to dropbox.com/account/plan',d:'Sign in and go to your plan page.'},{l:'Cancel plan',d:'Click Cancel plan.'},{l:'Confirm',d:'You revert to the free 2 GB plan. Your files are kept.'}],
+  'Duolingo Plus':        [{l:'Open the Duolingo app',d:'Tap your profile icon at the bottom.'},{l:'Settings → Notifications',d:'Go to Settings → Super Duolingo.'},{l:'Cancel subscription',d:'Tap Manage Subscription → Cancel.'},{l:'Or via App Store / Google Play',d:'Cancel directly in your device\'s subscription manager.'}],
+  'Amazon Prime':         [{l:'Go to amazon.com/prime',d:'Sign in and click Manage membership.'},{l:'End membership',d:'Click End Membership and Benefits.'},{l:'Choose end date',d:'You can end immediately or at the billing period end.'},{l:'Note',d:'Ending Prime also stops Prime Video, Prime Music, and free shipping.'}],
+  'NY Times':             [{l:'Go to nytimes.com/subscription',d:'Sign in to your NYT account.'},{l:'Manage account',d:'Click your name → Account → Subscription.'},{l:'Cancel subscription',d:'Click Cancel subscription and confirm.'},{l:'Note',d:'You may be offered a discounted rate before cancellation — compare to your current price.'}],
+  'NordVPN':              [{l:'Go to my.nordaccount.com',d:'Sign in to your Nord account.'},{l:'Billing section',d:'Go to Billing → Subscriptions.'},{l:'Cancel auto-renewal',d:'Click Cancel auto-renewal on your plan.'},{l:'Note',d:'NordVPN doesn\'t prorate refunds after 30 days of purchase.'}],
+  'Calm':                 [{l:'Open the Calm app',d:'Tap the gear icon (Settings).'},{l:'Manage subscription',d:'Tap Manage Subscription.'},{l:'Cancel via App Store',d:'Tap Cancel Subscription in your device subscription manager.'},{l:'Access until period ends',d:'Your Premium access continues until the billing period ends.'}],
+};
+const DEFAULT_STEPS = [{l:'Log in to the service',d:'Open the service\'s website or app and sign in.'},{l:'Find account or billing settings',d:'Look for Account, Settings, or Billing in your profile menu.'},{l:'Cancel or end subscription',d:'Find the Cancel or End Subscription option and confirm.'},{l:'Check your email',d:'You should receive a cancellation confirmation. Keep it for your records.'}];
+
+const CANCEL_URLS = {
+  'Netflix':               'https://www.netflix.com/cancelplan',
+  'Spotify':               'https://www.spotify.com/account/subscription/cancel/',
+  'Adobe Creative Cloud':  'https://account.adobe.com/plans',
+  'LinkedIn Premium':      'https://www.linkedin.com/premium/cancel-flow/',
+  'Headspace':             'https://www.headspace.com/account/subscription',
+  'Xbox Game Pass':        'https://account.microsoft.com/services/',
+  'Hulu':                  'https://secure.hulu.com/account/cancel',
+  'Dropbox Plus':          'https://www.dropbox.com/account/plan',
+  'Duolingo Plus':         'https://www.duolingo.com/settings/notifications',
+  'Amazon Prime':          'https://www.amazon.com/gp/primecentral',
+  'NY Times':              'https://myaccount.nytimes.com/seg/subscription',
+  'NordVPN':               'https://my.nordaccount.com/dashboard/nordvpn/',
+  'Calm':                  'https://www.calm.com/app/settings/subscription',
+};
+
+let cancelId = null;
+function openCancel(id) {
+  const s = SUBS.find(x=>x.id===id);
+  if (!s) return;
+  cancelId = id;
+  document.getElementById('cs-title').textContent = 'Cancel ' + s.name;
+  document.getElementById('cs-sub').textContent = 'Follow these steps to cancel. It takes about 2 minutes.';
+  const url = CANCEL_URLS[s.name];
+  const link = document.getElementById('cs-deeplink');
+  const linklabel = document.getElementById('cs-deeplink-label');
+  if (url) {
+    link.href = url;
+    linklabel.textContent = 'Open ' + s.name + ' cancellation page';
+    link.hidden = false;
+  } else {
+    link.hidden = true;
+  }
+  const steps = CANCEL_STEPS[s.name] || DEFAULT_STEPS;
+  document.getElementById('cs-steps').innerHTML = steps.map((st,i)=>`
+    <div class="cstep">
+      <div class="cstep-num">${i+1}</div>
+      <div class="cstep-text"><div class="cstep-l">${st.l}</div><div class="cstep-d">${st.d}</div></div>
+    </div>`).join('');
+  document.getElementById('csheet').classList.remove('hide');
+}
+function closeCancel() { document.getElementById('csheet').classList.add('hide'); }
+function confirmCancel() {
+  const s = SUBS.find(x=>x.id===cancelId);
+  if (s) {
+    const idx = SUBS.indexOf(s);
+    SUBS.splice(idx,1);
+    closeCancel();
+    closeDetail();
+    renderList();
+    renderIns();
+  }
+}
+
+// ── SUPABASE CONFIG ──
+const SUPABASE_URL      = 'https://bvvesewuqlvbainaqpye.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_ih0xod-COPKut58SiJLV1w_rxBKtwgy';
+
+let supabase = null;
+try {
+  if (SUPABASE_URL !== 'YOUR_SUPABASE_URL') {
+    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  }
+} catch(e) { console.warn('Supabase init failed:', e); }
+
+// ── AUTH HELPERS ──
+function setAuthLoading(btnId, loading) {
+  const btn = document.getElementById(btnId);
+  btn.disabled = loading;
+  btn.innerHTML = loading
+    ? '<div class="btn-spin"></div>'
+    : btn.dataset.label || btn.textContent;
+  if (!btn.dataset.label && !loading) return;
+  if (!btn.dataset.label) btn.dataset.label = btn.textContent;
+}
+function showAuthError(elId, msg) {
+  const el = document.getElementById(elId);
+  el.textContent = msg;
+  el.classList.toggle('vis', !!msg);
+  el.previousElementSibling?.classList.toggle('err', !!msg);
+}
+function clearErrors() {
+  document.querySelectorAll('.auth-error').forEach(e=>{ e.classList.remove('vis'); e.textContent=''; });
+  document.querySelectorAll('.auth-input').forEach(i=>i.classList.remove('err'));
+}
+
+function showLogin()  { clearErrors(); document.getElementById('auth-login').style.display=''; document.getElementById('auth-signup').style.display='none'; document.getElementById('auth-reset').classList.remove('vis'); }
+function showSignup() { clearErrors(); document.getElementById('auth-login').style.display='none'; document.getElementById('auth-signup').style.display=''; document.getElementById('auth-reset').classList.remove('vis'); }
+function showReset()  { clearErrors(); document.getElementById('auth-login').style.display='none'; document.getElementById('auth-signup').style.display='none'; document.getElementById('auth-reset').classList.add('vis'); }
+
+async function doLogin() {
+  clearErrors();
+  const email = document.getElementById('login-email').value.trim();
+  const pass  = document.getElementById('login-pass').value;
+  if (!email || !pass) { showAuthError('login-error', 'Email and password are required.'); return; }
+  if (!supabase) { showAuthError('login-error', 'Supabase not configured — add your URL and anon key.'); return; }
+  setAuthLoading('login-btn', true);
+  const { error } = await supabase.auth.signInWithPassword({ email, password: pass });
+  setAuthLoading('login-btn', false);
+  if (error) { showAuthError('login-error', error.message); return; }
+  enterApp();
+}
+
+async function doSignup() {
+  clearErrors();
+  const name  = document.getElementById('su-name').value.trim();
+  const email = document.getElementById('su-email').value.trim();
+  const pass  = document.getElementById('su-pass').value;
+  if (!email || !pass) { showAuthError('signup-error', 'Email and password are required.'); return; }
+  if (pass.length < 8)  { showAuthError('signup-error', 'Password must be at least 8 characters.'); return; }
+  if (!supabase) { showAuthError('signup-error', 'Supabase not configured — add your URL and anon key.'); return; }
+  setAuthLoading('signup-btn', true);
+  const { error } = await supabase.auth.signUp({
+    email, password: pass,
+    options: { data: { full_name: name } }
+  });
+  setAuthLoading('signup-btn', false);
+  if (error) { showAuthError('signup-error', error.message); return; }
+  showAuthError('signup-error', '');
+  showToast('📬 Check your email to confirm your account.');
+  showLogin();
+}
+
+async function doReset() {
+  clearErrors();
+  const email = document.getElementById('reset-email').value.trim();
+  if (!email) { showAuthError('reset-error', 'Enter your email address.'); return; }
+  if (!supabase) { showAuthError('reset-error', 'Supabase not configured — add your URL and anon key.'); return; }
+  setAuthLoading('reset-btn', true);
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.href
+  });
+  setAuthLoading('reset-btn', false);
+  if (error) { showAuthError('reset-error', error.message); return; }
+  showToast('📬 Reset link sent — check your inbox.');
+  showLogin();
+}
+
+async function doSignOut() {
+  if (supabase) await supabase.auth.signOut();
+  document.getElementById('auth-screen').classList.remove('gone');
+  document.getElementById('main').classList.remove('vis');
+  document.getElementById('onboarding').classList.remove('gone');
+  showLogin();
+}
+
+function enterApp() {
+  document.getElementById('auth-screen').classList.add('gone');
+  // First-time users see onboarding; returning users go straight to main app.
+  // For this prototype we always show onboarding on fresh auth.
+  nav('home');
+  document.getElementById('view-home').style.display='';
+}
+
+// ── INIT ──
+nav('home');
+document.getElementById('view-home').style.display='';
+
+// Check for existing Supabase session on load
+(async () => {
+  if (!supabase) {
+    // No credentials yet — show auth screen with a notice
+    return; // auth-screen is already visible
+  }
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session) enterApp();
+
+  // Stay in sync if the user signs in/out in another tab
+  supabase.auth.onAuthStateChange((event, session) => {
+    if (event === 'SIGNED_IN'  && session) enterApp();
+    if (event === 'SIGNED_OUT')             doSignOut();
+  });
+})();
+</script>
