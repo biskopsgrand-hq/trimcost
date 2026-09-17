@@ -1611,10 +1611,11 @@ async function doReset() {
 }
 
 async function doSignOut() {
-  if (supabaseClient) await supabaseClient.auth.signOut();
+  try { if (supabaseClient) await supabaseClient.auth.signOut(); } catch {}
   document.getElementById('auth-screen').classList.remove('gone');
   document.getElementById('main').classList.remove('vis');
   document.getElementById('onboarding').classList.remove('gone');
+  isPro = false;
   showLogin();
 }
 
