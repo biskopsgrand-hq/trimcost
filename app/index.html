@@ -1042,7 +1042,7 @@ function updateSelCount() {
 }
 // ── PLAID ──
 const FUNCTIONS_URL = 'https://bvvesewuqlvbainaqpye.supabase.co/functions/v1';
-const FUNCTIONS_HEADERS = { 'apikey': SUPABASE_ANON_KEY, 'Content-Type': 'application/json' };
+function functionsHeaders() { return { 'apikey': SUPABASE_ANON_KEY, 'Content-Type': 'application/json' }; }
 
 const PLAID_TYPE_COLORS = { depository: '#0B5ED7', credit: '#9D2235', investment: '#FF6F00', loan: '#607D8B', other: '#4CAF50' };
 
@@ -1052,7 +1052,7 @@ async function connectWithPlaid() {
   btn.innerHTML = `<div class="btn-spin"></div> Connecting…`;
   try {
     const tokenRes = await fetch(`${FUNCTIONS_URL}/plaid-link-token`, {
-      method: 'POST', headers: FUNCTIONS_HEADERS,
+      method: 'POST', headers: functionsHeaders(),
     });
     const { link_token, error_message } = await tokenRes.json();
     if (!link_token) throw new Error(error_message || 'Could not get link token');
@@ -1063,7 +1063,7 @@ async function connectWithPlaid() {
         btn.innerHTML = `<div class="btn-spin"></div> Loading accounts…`;
         try {
           const acctRes = await fetch(`${FUNCTIONS_URL}/plaid-exchange-token`, {
-            method: 'POST', headers: FUNCTIONS_HEADERS,
+            method: 'POST', headers: functionsHeaders(),
             body: JSON.stringify({ public_token }),
           });
           const data = await acctRes.json();
