@@ -1347,6 +1347,8 @@ function openCancel(id) {
   const linklabel = document.getElementById('cs-deeplink-label');
   if (url) {
     link.href = url;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
     linklabel.textContent = 'Open ' + s.name + ' cancellation page';
     link.hidden = false;
   } else {
