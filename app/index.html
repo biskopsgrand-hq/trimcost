@@ -1207,10 +1207,11 @@ function fmtD(dateStr) {
 
 function detectSubscriptions(transactions) {
   const groups = {};
+  const SKIP = /payment|transfer|deposit|withdrawal|atm|zelle|venmo|paypal|refund|credit card|loan|mortgage|rent|insurance|tax|fee|interest|dividend|direct dep|payroll|salary|mcdonalds|mcdonald|starbucks|uber eats|doordash|grubhub|chipotle|subway|chick-fil|taco bell|burger king|wendy|domino|pizza|restaurant|grocery|walmart|target|costco|kroger|publix|safeway|cvs|walgreen|rite aid|gas station|shell|exxon|chevron|bp |marathon|speedway|7-eleven/i;
   for (const tx of transactions) {
     if (tx.amount <= 0 || tx.amount > 400) continue; // skip refunds and large one-offs
     const key = (tx.merchant_name || tx.name || '').trim();
-    if (!key) continue;
+    if (!key || SKIP.test(key)) continue;
     (groups[key] = groups[key] || []).push(tx);
   }
 
@@ -1218,7 +1219,7 @@ function detectSubscriptions(transactions) {
   let nextId = 2000;
 
   for (const [name, txs] of Object.entries(groups)) {
-    if (txs.length < 2) continue;
+    if (txs.length < 3) continue;
     txs.sort((a, b) => new Date(a.date) - new Date(b.date));
 
     // Amount consistency — within 10%
