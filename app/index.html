@@ -1659,15 +1659,19 @@ async function doReset() {
   showLogin();
 }
 
-async function doSignOut() {
-  try { if (supabaseClient) await supabaseClient.auth.signOut(); } catch {}
+function resetToLoginScreen() {
   SUBS.length = 0;
   _appEntered = false;
+  isPro = false;
   document.getElementById('auth-screen').classList.remove('gone');
   document.getElementById('main').classList.remove('vis');
   document.getElementById('onboarding').classList.remove('gone');
-  isPro = false;
   showLogin();
+}
+
+async function doSignOut() {
+  try { if (supabaseClient) await supabaseClient.auth.signOut(); } catch {}
+  resetToLoginScreen();
 }
 
 let _appEntered = false;
@@ -1738,7 +1742,7 @@ document.getElementById('view-home').style.display='';
 
   supabaseClient.auth.onAuthStateChange((event, session) => {
     if (event === 'SIGNED_IN'  && session) enterApp();
-    if (event === 'SIGNED_OUT')             doSignOut();
+    if (event === 'SIGNED_OUT')             resetToLoginScreen();
   });
 })();
 </script>
