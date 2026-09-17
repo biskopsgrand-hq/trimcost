@@ -5,6 +5,10 @@ const CORS = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+function dateStr(d: Date) {
+  return d.toISOString().split('T')[0]
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
   try {
@@ -31,10 +35,28 @@ serve(async (req) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ client_id: PLAID_CLIENT_ID, secret: PLAID_SECRET, access_token }),
     })
-    const accountsData = await accountsRes.json()
-    return new Response(JSON.stringify(accountsData), {
+    const { accounts } = await accountsRes.json()
+
+    // Fetch transactions — last 365 days for better recurring detection
+    const endDate   = dateStr(new Date())
+    const startDate = dateStr(new Date(Date.now() - 365 * 86400000))
+    const txRes = await fetch(`https://${PLAID_ENV}.plaid.com/transactions/get`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        client_id: PLAID_CLIENT_ID,
+        secret: PLAID_SECRET,
+        access_token,
+        start_date: startDate,
+        end_date: endDate,
+        options: { count: 500, offset: 0 },
+      }),
+    })
+    const { transactions } = await txRes.json()
+
+    return new Response(JSON.stringify({ accounts, transactions: transactions || [] }), {
       headers: { ...CORS, 'Content-Type': 'application/json' },
-      status: accountsRes.ok ? 200 : 400,
+      status: 200,
     })
   } catch (err) {
     return new Response(JSON.stringify({ error: err.message }), {

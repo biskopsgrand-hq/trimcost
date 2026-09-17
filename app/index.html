@@ -752,7 +752,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 </div>
 
 <script>
-const SUBS = [
+let SUBS = [
   {id:1,  name:'Netflix',              icon:'🎬', cat:'entertainment', clr:'#E50914', price:15.99, last:'Sep 10', next:'Oct 10', since:'Jan 2021', unused:false},
   {id:2,  name:'Spotify',             icon:'🎵', cat:'entertainment', clr:'#1DB954', price:9.99,  last:'Sep 7',  next:'Oct 7',  since:'Mar 2019', unused:false},
   {id:3,  name:'Adobe Creative Cloud',icon:'🎨', cat:'productivity',  clr:'#FF0000', price:54.99, last:'Sep 1',  next:'Oct 1',  since:'Aug 2022', unused:false},
@@ -1045,6 +1045,7 @@ const FUNCTIONS_URL = 'https://bvvesewuqlvbainaqpye.supabase.co/functions/v1';
 function functionsHeaders() { return { 'apikey': SUPABASE_ANON_KEY, 'Content-Type': 'application/json' }; }
 
 const PLAID_TYPE_COLORS = { depository: '#0B5ED7', credit: '#9D2235', investment: '#FF6F00', loan: '#607D8B', other: '#4CAF50' };
+let _plaidTransactions = [];
 
 async function connectWithPlaid() {
   const btn = document.getElementById('plaid-btn');
@@ -1068,6 +1069,7 @@ async function connectWithPlaid() {
           });
           const data = await acctRes.json();
           if (data.error_message) throw new Error(data.error_message);
+          _plaidTransactions = data.transactions || [];
           renderPlaidAccounts(data.accounts || [], metadata.institution);
         } catch (e) {
           showToast('Could not load accounts: ' + e.message);
@@ -1157,6 +1159,112 @@ function confirmAddAcct() {
   toggleAcct(row); // auto-select the newly added account
 }
 
+// ── SUBSCRIPTION DETECTION ──
+const BRAND_META = {
+  netflix:    { icon:'🎬', clr:'#E50914', cat:'entertainment' },
+  spotify:    { icon:'🎵', clr:'#1DB954', cat:'entertainment' },
+  hulu:       { icon:'📺', clr:'#3DBB3D', cat:'entertainment' },
+  disney:     { icon:'🏰', clr:'#0063E5', cat:'entertainment' },
+  youtube:    { icon:'▶️', clr:'#FF0000', cat:'entertainment' },
+  'apple music':{ icon:'🎵', clr:'#FC3C44', cat:'entertainment' },
+  xbox:       { icon:'🎮', clr:'#107C10', cat:'entertainment' },
+  playstation:{ icon:'🎮', clr:'#003087', cat:'entertainment' },
+  nintendo:   { icon:'🎮', clr:'#E60012', cat:'entertainment' },
+  twitch:     { icon:'🎮', clr:'#9146FF', cat:'entertainment' },
+  adobe:      { icon:'🎨', clr:'#FF0000', cat:'productivity' },
+  microsoft:  { icon:'💻', clr:'#00A4EF', cat:'productivity' },
+  google:     { icon:'🔍', clr:'#4285F4', cat:'productivity' },
+  dropbox:    { icon:'☁️', clr:'#0061FF', cat:'productivity' },
+  slack:      { icon:'💬', clr:'#4A154B', cat:'productivity' },
+  zoom:       { icon:'📹', clr:'#2D8CFF', cat:'productivity' },
+  github:     { icon:'🐙', clr:'#333',    cat:'productivity' },
+  linkedin:   { icon:'💼', clr:'#0A66C2', cat:'productivity' },
+  amazon:     { icon:'📦', clr:'#FF9900', cat:'productivity' },
+  nordvpn:    { icon:'🛡️', clr:'#4687FF', cat:'productivity' },
+  notion:     { icon:'📋', clr:'#000',    cat:'productivity' },
+  headspace:  { icon:'🧘', clr:'#F47D31', cat:'health' },
+  calm:       { icon:'🌊', clr:'#3454D1', cat:'health' },
+  duolingo:   { icon:'🦜', clr:'#58CC02', cat:'health' },
+  nytimes:    { icon:'📰', clr:'#333',    cat:'productivity' },
+  'new york times':{ icon:'📰', clr:'#333', cat:'productivity' },
+};
+const FALLBACK_CLRS = ['#8B5CF6','#EC4899','#14B8A6','#F59E0B','#06B6D4','#84CC16','#F97316'];
+let _clrIdx = 0;
+
+function brandMeta(name) {
+  const n = name.toLowerCase();
+  for (const [k, v] of Object.entries(BRAND_META)) { if (n.includes(k)) return v; }
+  const cats = n.includes('music') || n.includes('video') || n.includes('stream') ? 'entertainment'
+             : n.includes('health') || n.includes('fit') || n.includes('gym') ? 'health'
+             : 'productivity';
+  return { icon: cats === 'entertainment' ? '🎬' : cats === 'health' ? '🏃' : '💻',
+           clr: FALLBACK_CLRS[_clrIdx++ % FALLBACK_CLRS.length], cat: cats };
+}
+
+function fmtD(dateStr) {
+  return new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', { month:'short', day:'numeric' });
+}
+
+function detectSubscriptions(transactions) {
+  const groups = {};
+  for (const tx of transactions) {
+    if (tx.amount <= 0 || tx.amount > 400) continue; // skip refunds and large one-offs
+    const key = (tx.merchant_name || tx.name || '').trim();
+    if (!key) continue;
+    (groups[key] = groups[key] || []).push(tx);
+  }
+
+  const detected = [];
+  let nextId = 2000;
+
+  for (const [name, txs] of Object.entries(groups)) {
+    if (txs.length < 2) continue;
+    txs.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    // Amount consistency — within 10%
+    const amounts = txs.map(t => t.amount);
+    const avg = amounts.reduce((s, v) => s + v, 0) / amounts.length;
+    if (!amounts.every(a => Math.abs(a - avg) / avg < 0.10)) continue;
+
+    // Interval consistency — derive period
+    const intervals = [];
+    for (let i = 1; i < txs.length; i++) {
+      intervals.push((new Date(txs[i].date) - new Date(txs[i-1].date)) / 86400000);
+    }
+    const avgInt = intervals.reduce((s, v) => s + v, 0) / intervals.length;
+    if (!intervals.every(d => Math.abs(d - avgInt) < 8)) continue;
+
+    let period;
+    if      (avgInt >= 25  && avgInt <= 35 ) period = 'monthly';
+    else if (avgInt >= 6   && avgInt <= 9  ) period = 'weekly';
+    else if (avgInt >= 85  && avgInt <= 100) period = 'quarterly';
+    else if (avgInt >= 340 && avgInt <= 400) period = 'yearly';
+    else continue;
+
+    const last = txs[txs.length - 1].date;
+    const nextDt = new Date(last + 'T12:00:00');
+    if      (period === 'monthly')   nextDt.setMonth(nextDt.getMonth() + 1);
+    else if (period === 'weekly')    nextDt.setDate(nextDt.getDate() + 7);
+    else if (period === 'quarterly') nextDt.setMonth(nextDt.getMonth() + 3);
+    else if (period === 'yearly')    nextDt.setFullYear(nextDt.getFullYear() + 1);
+
+    const meta = brandMeta(name);
+    detected.push({
+      id: nextId++,
+      name,
+      icon: meta.icon,
+      cat:  meta.cat,
+      clr:  meta.clr,
+      price: Math.round(avg * 100) / 100,
+      last:  fmtD(last),
+      next:  nextDt.toLocaleDateString('en-US', { month:'short', day:'numeric' }),
+      since: fmtD(txs[0].date),
+      unused: false,
+    });
+  }
+  return detected;
+}
+
 const LOAD_STEPS=['Connecting to accounts...','Reading transactions...','Identifying recurring charges...','Detecting subscriptions...','Calculating your savings...','Done!'];
 function startConnect() {
   document.getElementById('onboarding').classList.add('gone');
@@ -1169,11 +1277,16 @@ function startConnect() {
     i++;
     if (i>=LOAD_STEPS.length) {
       clearInterval(iv);
+      if (_plaidTransactions.length > 0) {
+        const found = detectSubscriptions(_plaidTransactions);
+        if (found.length > 0) { SUBS.length = 0; SUBS.push(...found); }
+      }
       setTimeout(()=>{
         ld.classList.remove('vis');
         document.getElementById('main').classList.add('vis');
         renderList();
         renderIns();
+        updateHero();
       }, 500);
     }
   }, 480);
