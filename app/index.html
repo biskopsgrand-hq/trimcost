@@ -968,12 +968,12 @@ async function confirmCancelPro() {
 
   // Send confirmation email via Supabase Edge Function
   try {
-    const session = supabase ? await supabase.auth.getSession() : null;
+    const session = supabaseClient ? await supabaseClient.auth.getSession() : null;
     const user = session?.data?.session?.user;
     const email = user?.email;
     const name = user?.user_metadata?.full_name || user?.user_metadata?.name || '';
-    if (email && supabase) {
-      await supabase.functions.invoke('cancel-subscription', {
+    if (email && supabaseClient) {
+      await supabaseClient.functions.invoke('cancel-subscription', {
         body: { email, name, renewal_date: RENEWAL_DATE },
       });
     }
@@ -1126,10 +1126,10 @@ function confirmCancel() {
 const SUPABASE_URL      = 'https://bvvesewuqlvbainaqpye.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_ih0xod-COPKut58SiJLV1w_rxBKtwgy';
 
-let supabase = null;
+let supabaseClient = null;
 try {
   if (SUPABASE_URL !== 'YOUR_SUPABASE_URL') {
-    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   }
 } catch(e) { console.warn('Supabase init failed:', e); }
 
@@ -1163,9 +1163,9 @@ async function doLogin() {
   const email = document.getElementById('login-email').value.trim();
   const pass  = document.getElementById('login-pass').value;
   if (!email || !pass) { showAuthError('login-error', 'Email and password are required.'); return; }
-  if (!supabase) { showAuthError('login-error', 'Supabase not configured — add your URL and anon key.'); return; }
+  if (!supabaseClient) { showAuthError('login-error', 'Supabase not configured — add your URL and anon key.'); return; }
   setAuthLoading('login-btn', true);
-  const { error } = await supabase.auth.signInWithPassword({ email, password: pass });
+  const { error } = await supabaseClient.auth.signInWithPassword({ email, password: pass });
   setAuthLoading('login-btn', false);
   if (error) { showAuthError('login-error', error.message); return; }
   enterApp();
@@ -1178,9 +1178,9 @@ async function doSignup() {
   const pass  = document.getElementById('su-pass').value;
   if (!email || !pass) { showAuthError('signup-error', 'Email and password are required.'); return; }
   if (pass.length < 8)  { showAuthError('signup-error', 'Password must be at least 8 characters.'); return; }
-  if (!supabase) { showAuthError('signup-error', 'Supabase not configured — add your URL and anon key.'); return; }
+  if (!supabaseClient) { showAuthError('signup-error', 'Supabase not configured — add your URL and anon key.'); return; }
   setAuthLoading('signup-btn', true);
-  const { error } = await supabase.auth.signUp({
+  const { error } = await supabaseClient.auth.signUp({
     email, password: pass,
     options: { data: { full_name: name } }
   });
@@ -1195,9 +1195,9 @@ async function doReset() {
   clearErrors();
   const email = document.getElementById('reset-email').value.trim();
   if (!email) { showAuthError('reset-error', 'Enter your email address.'); return; }
-  if (!supabase) { showAuthError('reset-error', 'Supabase not configured — add your URL and anon key.'); return; }
+  if (!supabaseClient) { showAuthError('reset-error', 'Supabase not configured — add your URL and anon key.'); return; }
   setAuthLoading('reset-btn', true);
-  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+  const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
     redirectTo: window.location.href
   });
   setAuthLoading('reset-btn', false);
@@ -1207,7 +1207,7 @@ async function doReset() {
 }
 
 async function doSignOut() {
-  if (supabase) await supabase.auth.signOut();
+  if (supabaseClient) await supabaseClient.auth.signOut();
   document.getElementById('auth-screen').classList.remove('gone');
   document.getElementById('main').classList.remove('vis');
   document.getElementById('onboarding').classList.remove('gone');
@@ -1228,15 +1228,15 @@ document.getElementById('view-home').style.display='';
 
 // Check for existing Supabase session on load
 (async () => {
-  if (!supabase) {
+  if (!supabaseClient) {
     // No credentials yet — show auth screen with a notice
     return; // auth-screen is already visible
   }
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { session } } = await supabaseClient.auth.getSession();
   if (session) enterApp();
 
   // Stay in sync if the user signs in/out in another tab
-  supabase.auth.onAuthStateChange((event, session) => {
+  supabaseClient.auth.onAuthStateChange((event, session) => {
     if (event === 'SIGNED_IN'  && session) enterApp();
     if (event === 'SIGNED_OUT')             doSignOut();
   });
