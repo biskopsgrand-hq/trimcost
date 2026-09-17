@@ -1,69 +1,69 @@
 <title>TrimCost</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <!-- Tink uses a redirect-based flow; no SDK needed -->
 <style>
 :root {
-  --bg: #0F0F13;
-  --surface: #1A1A22;
-  --surface2: #23232F;
-  --surface3: #2D2D3C;
-  --accent: #00D4AA;
-  --accent-soft: rgba(0,212,170,0.11);
-  --accent-dim: rgba(0,212,170,0.5);
-  --danger: #FF5870;
-  --danger-soft: rgba(255,88,112,0.11);
-  --warning: #FFB347;
-  --warning-soft: rgba(255,179,71,0.11);
-  --text: #EEEDFA;
-  --text2: #87869E;
-  --text3: #52516A;
-  --border: rgba(255,255,255,0.06);
-  --cat-ent: #00D4AA;
-  --cat-pro: #9B8BFF;
-  --cat-hlth: #F47D31;
+  --bg: #052e16;
+  --surface: #0a1f0e;
+  --surface2: #0f2e17;
+  --surface3: #163d1e;
+  --accent: #4ade80;
+  --accent-soft: rgba(74,222,128,0.10);
+  --accent-dim: rgba(74,222,128,0.35);
+  --danger: #f87171;
+  --danger-soft: rgba(248,113,113,0.12);
+  --warning: #fbbf24;
+  --warning-soft: rgba(251,191,36,0.12);
+  --text: #f0fdf4;
+  --text2: #86efac;
+  --text3: rgba(134,239,172,0.45);
+  --border: rgba(74,222,128,0.12);
+  --cat-ent: #4ade80;
+  --cat-pro: #60a5fa;
+  --cat-hlth: #fb923c;
 }
 @media (prefers-color-scheme: light) {
   :root:not([data-theme="dark"]) {
-    --bg: #F2F1FA;
-    --surface: #FFFFFF;
-    --surface2: #EDEDF6;
-    --surface3: #E2E1EE;
-    --accent: #008C72;
-    --accent-soft: rgba(0,140,114,0.09);
-    --accent-dim: rgba(0,140,114,0.4);
-    --danger: #D93858;
-    --danger-soft: rgba(217,56,88,0.09);
-    --warning: #C47A00;
-    --warning-soft: rgba(196,122,0,0.09);
-    --text: #141320;
-    --text2: #6B6A84;
-    --text3: #9997B5;
-    --border: rgba(0,0,0,0.07);
-    --cat-ent: #007A62;
-    --cat-pro: #6B59E0;
-    --cat-hlth: #C05C15;
+    --bg: #f0fdf4;
+    --surface: #ffffff;
+    --surface2: #dcfce7;
+    --surface3: #bbf7d0;
+    --accent: #16a34a;
+    --accent-soft: rgba(22,163,74,0.09);
+    --accent-dim: rgba(22,163,74,0.40);
+    --danger: #dc2626;
+    --danger-soft: rgba(220,38,38,0.09);
+    --warning: #d97706;
+    --warning-soft: rgba(217,119,6,0.09);
+    --text: #052e16;
+    --text2: #166534;
+    --text3: #4ade80;
+    --border: rgba(22,163,74,0.12);
+    --cat-ent: #16a34a;
+    --cat-pro: #2563eb;
+    --cat-hlth: #ea580c;
   }
 }
 :root[data-theme="light"] {
-  --bg: #F2F1FA;
-  --surface: #FFFFFF;
-  --surface2: #EDEDF6;
-  --surface3: #E2E1EE;
-  --accent: #008C72;
-  --accent-soft: rgba(0,140,114,0.09);
-  --accent-dim: rgba(0,140,114,0.4);
-  --danger: #D93858;
-  --danger-soft: rgba(217,56,88,0.09);
-  --warning: #C47A00;
-  --warning-soft: rgba(196,122,0,0.09);
-  --text: #141320;
-  --text2: #6B6A84;
-  --text3: #9997B5;
-  --border: rgba(0,0,0,0.07);
-  --cat-ent: #007A62;
-  --cat-pro: #6B59E0;
-  --cat-hlth: #C05C15;
+  --bg: #f0fdf4;
+  --surface: #ffffff;
+  --surface2: #dcfce7;
+  --surface3: #bbf7d0;
+  --accent: #16a34a;
+  --accent-soft: rgba(22,163,74,0.09);
+  --accent-dim: rgba(22,163,74,0.40);
+  --danger: #dc2626;
+  --danger-soft: rgba(220,38,38,0.09);
+  --warning: #d97706;
+  --warning-soft: rgba(217,119,6,0.09);
+  --text: #052e16;
+  --text2: #166534;
+  --text3: #4ade80;
+  --border: rgba(22,163,74,0.12);
+  --cat-ent: #16a34a;
+  --cat-pro: #2563eb;
+  --cat-hlth: #ea580c;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM Sans',system-ui,sans-serif;font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;overflow:hidden}
@@ -78,7 +78,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 #ob1{align-items:center;justify-content:center;padding:32px 24px;text-align:center}
 .ob-logo{width:60px;height:60px;background:var(--accent-soft);border:1px solid var(--accent-dim);border-radius:17px;display:flex;align-items:center;justify-content:center;margin-bottom:26px}
 .ob-logo svg{width:30px;height:30px}
-.ob-h{font-size:27px;font-weight:600;letter-spacing:-.5px;margin-bottom:10px}
+.ob-h{font-size:27px;font-weight:800;letter-spacing:-.5px;margin-bottom:10px;font-family:'Syne',sans-serif}
 .ob-p{font-size:14px;color:var(--text2);max-width:270px;line-height:1.65;margin-bottom:40px}
 .ob-feat{display:flex;flex-direction:column;gap:10px;width:100%;margin-bottom:36px}
 .ob-feat-row{display:flex;align-items:center;gap:12px;padding:11px 14px;background:var(--surface);border:1px solid var(--border);border-radius:11px;text-align:left}
@@ -136,7 +136,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 #main{height:100%;display:flex;flex-direction:column;opacity:0;transition:opacity .4s}
 #main.vis{opacity:1}
 .app-bar{padding:14px 20px 10px;display:flex;align-items:center;justify-content:space-between;background:var(--bg);flex-shrink:0;padding-top:calc(14px + env(safe-area-inset-top,0px))}
-.app-bar-title{font-size:19px;font-weight:600;letter-spacing:-.3px}
+.app-bar-title{font-size:19px;font-weight:800;letter-spacing:-.3px;font-family:'Syne',sans-serif}
 .app-bar-sub{font-size:11px;color:var(--text3);margin-top:1px}
 .av{width:35px;height:35px;border-radius:50%;background:var(--accent-soft);border:1.5px solid var(--accent-dim);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px;color:var(--accent)}
 .scroll{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none}
@@ -217,7 +217,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 /* ── INSIGHTS VIEW ── */
 #view-ins{display:none;flex-direction:column}
 #view-ins.on{display:flex}
-.ins-h{font-size:19px;font-weight:600;padding:0 16px 14px;letter-spacing:-.3px}
+.ins-h{font-size:19px;font-weight:800;padding:0 16px 14px;letter-spacing:-.3px;font-family:'Syne',sans-serif}
 .sec-hdr{display:flex;justify-content:space-between;align-items:baseline;padding:0 16px 9px}
 .sec-t{font-size:10px;text-transform:uppercase;letter-spacing:.7px;color:var(--text3);font-weight:700}
 .sec-r{font-family:'DM Mono',monospace;font-size:12px;color:var(--text3)}
@@ -341,8 +341,8 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .auth-logo{display:flex;align-items:center;gap:10px;margin-bottom:36px}
 .auth-logo-ic{width:38px;height:38px;background:var(--accent-soft);border:1px solid var(--accent-dim);border-radius:11px;display:flex;align-items:center;justify-content:center}
 .auth-logo-ic svg{width:19px;height:19px}
-.auth-logo-name{font-size:20px;font-weight:600;letter-spacing:-.3px}
-.auth-h{font-size:24px;font-weight:600;letter-spacing:-.4px;margin-bottom:6px}
+.auth-logo-name{font-size:20px;font-weight:800;letter-spacing:-.3px;font-family:'Syne',sans-serif}
+.auth-h{font-size:24px;font-weight:800;letter-spacing:-.4px;margin-bottom:6px;font-family:'Syne',sans-serif}
 .auth-sub{font-size:13px;color:var(--text2);margin-bottom:28px;line-height:1.55}
 .auth-field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
 .auth-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text3)}
