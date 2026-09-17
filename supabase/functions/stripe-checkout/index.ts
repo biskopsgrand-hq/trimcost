@@ -1,5 +1,4 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno'
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -12,26 +11,37 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
 
   try {
-    const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') ?? '', {
-      apiVersion: '2023-10-16',
-      httpClient: Stripe.createFetchHttpClient(),
-    })
+    const SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY')
+    if (!SECRET_KEY) throw new Error('STRIPE_SECRET_KEY not set')
 
     const { user_email, user_id } = await req.json()
     if (!user_id) throw new Error('user_id required')
 
-    const session = await stripe.checkout.sessions.create({
+    const params = new URLSearchParams({
       mode: 'subscription',
-      line_items: [{ price: PRICE_ID, quantity: 1 }],
+      'line_items[0][price]': PRICE_ID,
+      'line_items[0][quantity]': '1',
       success_url: 'https://trimcost.app/app?stripe_success=1',
       cancel_url: 'https://trimcost.app/app',
-      customer_email: user_email,
       client_reference_id: user_id,
-      allow_promotion_codes: true,
-      subscription_data: { trial_period_days: 7 },
+      allow_promotion_codes: 'true',
+      'subscription_data[trial_period_days]': '7',
+    })
+    if (user_email) params.set('customer_email', user_email)
+
+    const res = await fetch('https://api.stripe.com/v1/checkout/sessions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${SECRET_KEY}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: params.toString(),
     })
 
-    return new Response(JSON.stringify({ url: session.url }), {
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.error?.message || JSON.stringify(data))
+
+    return new Response(JSON.stringify({ url: data.url }), {
       headers: { ...CORS, 'Content-Type': 'application/json' },
     })
   } catch (err) {
