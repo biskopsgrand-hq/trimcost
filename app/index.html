@@ -957,7 +957,7 @@ function showCancelProSheet() {
 function closeCancelProSheet() {
   document.getElementById('cancel-pro-sheet').classList.add('hide');
 }
-function confirmCancelPro() {
+async function confirmCancelPro() {
   proCancelled = true;
   closeCancelProSheet();
   document.getElementById('sub-detail').textContent = `$9.99/yr · access until ${RENEWAL_DATE}`;
@@ -965,6 +965,21 @@ function confirmCancelPro() {
   document.getElementById('sub-status').style.color = 'var(--text3)';
   document.getElementById('cancel-sub-row').style.display = 'none';
   showToast('Subscription cancelled. Access continues until ' + RENEWAL_DATE + '.');
+
+  // Send confirmation email via Supabase Edge Function
+  try {
+    const session = supabase ? await supabase.auth.getSession() : null;
+    const user = session?.data?.session?.user;
+    const email = user?.email;
+    const name = user?.user_metadata?.full_name || user?.user_metadata?.name || '';
+    if (email && supabase) {
+      await supabase.functions.invoke('cancel-subscription', {
+        body: { email, name, renewal_date: RENEWAL_DATE },
+      });
+    }
+  } catch (e) {
+    console.warn('Could not send cancellation email:', e);
+  }
 }
 function showToast(msg) {
   const t = document.getElementById('toast');
