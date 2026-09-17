@@ -844,7 +844,7 @@ function renderList() {
 
 function togUnused(id, val) {
   const s = SUBS.find(x=>x.id===id);
-  if (s) { s.unused=val; renderList(); renderIns(); }
+  if (s) { s.unused=val; renderList(); renderIns(); updateSubUnusedInSupabase(s); }
 }
 
 function filt(f, el) {
@@ -1155,6 +1155,7 @@ async function handleTinkCallback(code) {
     _plaidTransactions = normalized;
     const found = detectSubscriptions(normalized);
     if (found.length > 0) { SUBS.length = 0; SUBS.push(...found); }
+    if (found.length > 0) await saveSubsToSupabase(found);
 
     if (data.accounts?.length) renderTinkAccounts(data.accounts);
 
@@ -1422,6 +1423,7 @@ function closeCancel() { document.getElementById('csheet').classList.add('hide')
 function confirmCancel() {
   const s = SUBS.find(x=>x.id===cancelId);
   if (s) {
+    deleteSubFromSupabase(s);
     const idx = SUBS.indexOf(s);
     SUBS.splice(idx,1);
     closeCancel();
@@ -1429,6 +1431,73 @@ function confirmCancel() {
     renderList();
     renderIns();
   }
+}
+
+// ── SUPABASE PERSISTENCE ──
+async function saveSubsToSupabase(subs) {
+  if (!supabaseClient) return;
+  try {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) return;
+    const userId = session.user.id;
+    const rows = subs.map(s => ({
+      user_id:    userId,
+      sub_key:    s.name.toLowerCase().replace(/\W+/g, '_'),
+      name:       s.name,
+      icon:       s.icon,
+      cat:        s.cat,
+      clr:        s.clr,
+      price:      s.price,
+      last_date:  s.last,
+      next_date:  s.next,
+      since_date: s.since,
+      unused:     s.unused,
+      currency:   _currency,
+    }));
+    await supabaseClient.from('subscriptions').upsert(rows, { onConflict: 'user_id,sub_key' });
+  } catch (e) { console.warn('saveSubsToSupabase:', e); }
+}
+
+async function loadSubsFromSupabase() {
+  if (!supabaseClient) return null;
+  try {
+    const { data, error } = await supabaseClient.from('subscriptions').select('*').order('price', { ascending: false });
+    if (error || !data?.length) return null;
+    if (data[0]?.currency) _currency = data[0].currency;
+    return data.map((r, i) => ({
+      id:     1000 + i,
+      name:   r.name,
+      icon:   r.icon  || '💻',
+      cat:    r.cat   || 'productivity',
+      clr:    r.clr   || '#8B5CF6',
+      price:  parseFloat(r.price) || 0,
+      last:   r.last_date   || '',
+      next:   r.next_date   || '',
+      since:  r.since_date  || '',
+      unused: r.unused      || false,
+      _key:   r.sub_key,
+    }));
+  } catch (e) { console.warn('loadSubsFromSupabase:', e); return null; }
+}
+
+async function updateSubUnusedInSupabase(sub) {
+  if (!supabaseClient) return;
+  try {
+    const key = sub._key || sub.name.toLowerCase().replace(/\W+/g, '_');
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) return;
+    await supabaseClient.from('subscriptions').update({ unused: sub.unused }).eq('sub_key', key).eq('user_id', session.user.id);
+  } catch (e) { console.warn('updateSubUnusedInSupabase:', e); }
+}
+
+async function deleteSubFromSupabase(sub) {
+  if (!supabaseClient) return;
+  try {
+    const key = sub._key || sub.name.toLowerCase().replace(/\W+/g, '_');
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) return;
+    await supabaseClient.from('subscriptions').delete().eq('sub_key', key).eq('user_id', session.user.id);
+  } catch (e) { console.warn('deleteSubFromSupabase:', e); }
 }
 
 // ── SUPABASE CONFIG ──
@@ -1523,12 +1592,22 @@ async function doSignOut() {
   showLogin();
 }
 
-function enterApp() {
+async function enterApp() {
   document.getElementById('auth-screen').classList.add('gone');
-  // First-time users see onboarding; returning users go straight to main app.
-  // For this prototype we always show onboarding on fresh auth.
   nav('home');
   document.getElementById('view-home').style.display='';
+  // Returning users: load saved subs and skip onboarding
+  const saved = await loadSubsFromSupabase();
+  if (saved && saved.length > 0) {
+    SUBS.length = 0;
+    SUBS.push(...saved);
+    document.getElementById('onboarding').classList.add('gone');
+    document.getElementById('main').classList.add('vis');
+    renderList();
+    renderIns();
+    updateHero();
+  }
+  // else: first-time user sees onboarding
 }
 
 // ── INIT ──
