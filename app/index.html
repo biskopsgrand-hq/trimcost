@@ -283,6 +283,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .csheet.hide{display:none}
 .csheet-bg{position:absolute;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(2px)}
 .csheet-body{position:relative;background:var(--surface);border-radius:22px 22px 0 0;padding:24px 20px;padding-bottom:calc(24px + env(safe-area-inset-bottom,0px));animation:slideUp .3s cubic-bezier(.16,1,.3,1)}
+.csheet-inner{position:relative;background:var(--surface);border-radius:22px 22px 0 0;padding:24px 20px;padding-bottom:calc(24px + env(safe-area-inset-bottom,0px));animation:slideUp .3s cubic-bezier(.16,1,.3,1);display:flex;flex-direction:column}
 @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
 .csheet-handle{width:36px;height:4px;background:var(--surface3);border-radius:2px;margin:0 auto 20px}
 .csheet-title{font-size:17px;font-weight:600;letter-spacing:-.2px;margin-bottom:4px}
@@ -475,7 +476,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
           <input id="add-acct-digits" type="text" inputmode="numeric" maxlength="4" placeholder="1234" style="background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;padding:11px 13px;font-size:14px;color:var(--text);outline:none;width:100%;box-sizing:border-box" oninput="this.value=this.value.replace(/\D/g,'').slice(0,4)">
         </div>
       </div>
-      <button class="abtn" id="add-acct-confirm" onclick="confirmAddAcct()" disabled style="margin-top:2px">Add account</button>
+      <button class="btn-cta" id="add-acct-confirm" onclick="confirmAddAcct()" disabled style="margin-top:2px">Add account</button>
       <button class="abtn neu" onclick="closeAddAcct()">Cancel</button>
     </div>
   </div>
@@ -501,10 +502,10 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
     <div id="view-home" class="scroll">
       <div class="hero">
         <div class="hero-lbl">Monthly recurring</div>
-        <div class="hero-num" id="hnum">$214.90</div>
-        <div class="hero-sub" id="hsub">13 subscriptions · per month</div>
+        <div class="hero-num" id="hnum">$0.00</div>
+        <div class="hero-sub" id="hsub">0 subscriptions · per month</div>
         <div class="stats">
-          <div><div class="stat-v" id="st-cnt">13</div><div class="stat-l">Active</div></div>
+          <div><div class="stat-v" id="st-cnt">0</div><div class="stat-l">Active</div></div>
           <div><div class="stat-v red" id="st-bad">0</div><div class="stat-l">Unused</div></div>
           <div><div class="stat-v grn" id="st-save">$0</div><div class="stat-l">Could save</div></div>
         </div>
@@ -535,7 +536,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
     <div id="view-ins" class="scroll">
       <div style="padding-top:6px">
         <div class="ins-h">Spending breakdown</div>
-        <div class="sec-hdr"><span class="sec-t">By category</span><span class="sec-r" id="ins-tot">$214.90/mo</span></div>
+        <div class="sec-hdr"><span class="sec-t">By category</span><span class="sec-r" id="ins-tot">$0.00/mo</span></div>
         <div class="catbars" id="catbars"></div>
         <div class="sec-hdr"><span class="sec-t">Last 6 months</span></div>
         <div class="mo-chart"><div class="mo-bars" id="mobars"></div></div>
@@ -558,7 +559,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
           <div class="si"><div class="si-ic" style="background:var(--accent-soft)"><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1.5" y="3" width="12" height="9" rx="2" stroke="var(--accent)" stroke-width="1.3"/><path d="M1.5 6h12" stroke="var(--accent)" stroke-width="1.3"/><circle cx="4.5" cy="9.5" r="1" fill="var(--accent)"/></svg></div><div><div class="si-l">Connected bank</div><div class="si-d" id="bank-info">Not connected</div></div><span class="si-r">›</span></div>
           <div class="si"><div class="si-ic" style="background:var(--warning-soft)"><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M7.5 1.5L9 5.5H13.5L10 8.2L11.3 12.5L7.5 10L3.7 12.5L5 8.2L1.5 5.5H6L7.5 1.5Z" stroke="var(--warning)" stroke-width="1.3" fill="none"/></svg></div><div><div class="si-l">Renewal alerts</div><div class="si-d">Notified 3 days before charges</div></div><span class="si-r">›</span></div>
         </div>
-        <div class="sg" id="sg-sub">
+        <div class="sg" id="sg-sub" style="display:none">
           <div class="sg-lbl">Subscription</div>
           <div class="si"><div class="si-ic" style="background:var(--accent-soft)"><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="5.5" stroke="var(--accent)" stroke-width="1.3"/><path d="M5.5 7.5l1.5 1.5L9.5 6" stroke="var(--accent)" stroke-width="1.3" stroke-linecap="round"/></svg></div><div><div class="si-l">TrimCost Pro</div><div class="si-d" id="sub-detail">$10/yr · renews Sep 17, 2027</div></div><span class="si-r" id="sub-status" style="color:var(--accent);font-size:10px;font-weight:700">ACTIVE</span></div>
           <div class="si" id="cancel-sub-row" onclick="showCancelProSheet()" style="cursor:pointer"><div class="si-ic" style="background:var(--danger-soft)"><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M4 4l7 7M11 4l-7 7" stroke="var(--danger)" stroke-width="1.4" stroke-linecap="round"/></svg></div><div><div class="si-l" style="color:var(--danger)">Cancel subscription</div><div class="si-d">Access continues until Sep 17, 2027</div></div></div>
@@ -754,23 +755,11 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 </div>
 
 <script>
-let SUBS = [
-  {id:1,  name:'Netflix',              icon:'🎬', cat:'entertainment', clr:'#E50914', price:15.99, last:'Sep 10', next:'Oct 10', since:'Jan 2021', unused:false},
-  {id:2,  name:'Spotify',             icon:'🎵', cat:'entertainment', clr:'#1DB954', price:9.99,  last:'Sep 7',  next:'Oct 7',  since:'Mar 2019', unused:false},
-  {id:3,  name:'Adobe Creative Cloud',icon:'🎨', cat:'productivity',  clr:'#FF0000', price:54.99, last:'Sep 1',  next:'Oct 1',  since:'Aug 2022', unused:false},
-  {id:4,  name:'LinkedIn Premium',    icon:'💼', cat:'productivity',  clr:'#0A66C2', price:39.99, last:'Sep 5',  next:'Oct 5',  since:'Feb 2023', unused:false},
-  {id:5,  name:'Headspace',           icon:'🧘', cat:'health',        clr:'#F47D31', price:12.99, last:'Sep 3',  next:'Oct 3',  since:'Jan 2024', unused:false},
-  {id:6,  name:'Xbox Game Pass',      icon:'🎮', cat:'entertainment', clr:'#107C10', price:14.99, last:'Sep 12',next:'Oct 12',since:'Dec 2022', unused:false},
-  {id:7,  name:'Hulu',                icon:'📺', cat:'entertainment', clr:'#3DBB3D', price:17.99, last:'Sep 9', next:'Oct 9', since:'Sep 2021', unused:false},
-  {id:8,  name:'Dropbox Plus',        icon:'☁️', cat:'productivity',  clr:'#0061FF', price:11.99, last:'Sep 2', next:'Oct 2', since:'Jul 2020', unused:false},
-  {id:9,  name:'Duolingo Plus',       icon:'🦜', cat:'health',        clr:'#58CC02', price:6.99,  last:'Sep 14',next:'Oct 14',since:'Mar 2024', unused:false},
-  {id:10, name:'Amazon Prime',        icon:'📦', cat:'productivity',  clr:'#FF9900', price:14.99, last:'Sep 8', next:'Oct 8', since:'Nov 2018', unused:false},
-  {id:11, name:'NY Times',            icon:'📰', cat:'productivity',  clr:'#333',    price:4.00,  last:'Sep 6', next:'Oct 6', since:'Oct 2023', unused:false},
-  {id:12, name:'NordVPN',             icon:'🛡️', cat:'productivity',  clr:'#4687FF', price:4.99,  last:'Sep 15',next:'Oct 15',since:'Jun 2023', unused:false},
-  {id:13, name:'Calm',                icon:'🌊', cat:'health',        clr:'#3454D1', price:14.99, last:'Sep 4', next:'Oct 4', since:'Feb 2024', unused:false},
-];
+let SUBS = [];
 const CC = {entertainment:'var(--cat-ent)',productivity:'var(--cat-pro)',health:'var(--cat-hlth)'};
 let curFilt = 'all';
+
+const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
 let _currency = 'USD'; // updated when Tink data loads
 const fmt = n => {
@@ -822,10 +811,10 @@ function renderList() {
     d.innerHTML = `
       <div class="sic" style="background:${s.clr}18">${s.icon}</div>
       <div class="sinf">
-        <div class="sname">${s.name}</div>
+        <div class="sname">${esc(s.name)}</div>
         <div class="smeta">
           <span class="scat-dot" style="background:${CC[s.cat]}"></span>
-          <span>${s.cat}</span><span>·</span><span>Next ${s.next}</span>
+          <span>${esc(s.cat)}</span><span>·</span><span>Next ${esc(s.next)}</span>
         </div>
         <div class="ubadge">Unused</div>
       </div>
@@ -885,15 +874,15 @@ function renderDet(s) {
   document.getElementById('detcontent').innerHTML = `
     <div class="det-ic-wrap">
       <div class="det-ic" style="background:${s.clr}18">${s.icon}</div>
-      <div class="det-name">${s.name}</div>
+      <div class="det-name">${esc(s.name)}</div>
     </div>
     <div class="det-price">${fmt(s.price)}</div>
     <div class="det-psub">per month · ${fmt(annual)} per year</div>
     <div class="detsec">
-      <div class="detrow"><span class="detrow-l">Category</span><span class="detrow-v" style="color:${CC[s.cat]}">${s.cat}</span></div>
-      <div class="detrow"><span class="detrow-l">Last charged</span><span class="detrow-v mono">${s.last}</span></div>
-      <div class="detrow"><span class="detrow-l">Next charge</span><span class="detrow-v mono">${s.next}</span></div>
-      <div class="detrow"><span class="detrow-l">Subscribed since</span><span class="detrow-v mono">${s.since}</span></div>
+      <div class="detrow"><span class="detrow-l">Category</span><span class="detrow-v" style="color:${CC[s.cat]}">${esc(s.cat)}</span></div>
+      <div class="detrow"><span class="detrow-l">Last charged</span><span class="detrow-v mono">${esc(s.last)}</span></div>
+      <div class="detrow"><span class="detrow-l">Next charge</span><span class="detrow-v mono">${esc(s.next)}</span></div>
+      <div class="detrow"><span class="detrow-l">Subscribed since</span><span class="detrow-v mono">${esc(s.since)}</span></div>
       <div class="detrow"><span class="detrow-l">Total spent</span><span class="detrow-v mono">${fmt(spentSince(s))}</span></div>
     </div>
     <button class="abtn ${s.unused?'neu':'red'}" onclick="togFromDet(${s.id})">
@@ -925,7 +914,7 @@ function renderIns() {
     const pct = (a/total*100).toFixed(0);
     const el = document.createElement('div');
     el.className='cr';
-    el.innerHTML=`<div class="cr-top"><span class="cr-name">${c.charAt(0).toUpperCase()+c.slice(1)}</span><span class="cr-amt">${fmt(a)}/mo</span></div><div class="bar-bg"><div class="bar-fill" style="width:0%;background:${CC[c]}" data-w="${pct}%"></div></div>`;
+    el.innerHTML=`<div class="cr-top"><span class="cr-name">${esc(c.charAt(0).toUpperCase()+c.slice(1))}</span><span class="cr-amt">${fmt(a)}/mo</span></div><div class="bar-bg"><div class="bar-fill" style="width:0%;background:${CC[c]}" data-w="${pct}%"></div></div>`;
     cb.appendChild(el);
   });
   requestAnimationFrame(()=>{ cb.querySelectorAll('.bar-fill').forEach(e=>e.style.width=e.dataset.w); });
@@ -940,7 +929,7 @@ function renderIns() {
   const top = [...SUBS].sort((a,b)=>b.price-a.price).slice(0,5);
   document.getElementById('topspends').innerHTML = top.map(s=>`
     <div class="detrow">
-      <div style="display:flex;align-items:center;gap:9px"><span style="font-size:15px">${s.icon}</span><span style="font-size:12px;font-weight:500">${s.name}</span></div>
+      <div style="display:flex;align-items:center;gap:9px"><span style="font-size:15px">${s.icon}</span><span style="font-size:12px;font-weight:500">${esc(s.name)}</span></div>
       <span style="font-family:'DM Mono',monospace;font-size:12px;font-variant-numeric:tabular-nums">${fmt(s.price)}</span>
     </div>`).join('');
 
@@ -1136,7 +1125,7 @@ function renderTinkAccounts(accounts) {
     const row = document.createElement('div');
     row.className = 'acct-row';
     row.onclick = function() { toggleAcct(this); };
-    row.innerHTML = `<div class="acct-dot" style="background:${color};color:#fff">${initials}</div><div class="acct-info"><div class="acct-name">${name}</div><div class="acct-sub">${sub}</div></div><div class="acct-check">${checkSvg}</div>`;
+    row.innerHTML = `<div class="acct-dot" style="background:${color};color:#fff">${esc(initials)}</div><div class="acct-info"><div class="acct-name">${esc(name)}</div><div class="acct-sub">${esc(sub)}</div></div><div class="acct-check">${checkSvg}</div>`;
     document.getElementById(listId).appendChild(row);
     toggleAcct(row);
   });
@@ -1183,14 +1172,30 @@ async function handleTinkCallback(code) {
     const normalized = normalizeTinkTransactions(data.transactions || []);
     _plaidTransactions = normalized;
     const found = detectSubscriptions(normalized);
-    if (found.length > 0) { SUBS.length = 0; SUBS.push(...found); }
-    if (found.length > 0) await saveSubsToSupabase(found);
+    SUBS.length = 0;
+    if (found.length > 0) { SUBS.push(...found); await saveSubsToSupabase(found); }
 
     if (data.accounts?.length) renderTinkAccounts(data.accounts);
 
-    st.textContent = `Found ${found.length} subscription${found.length !== 1 ? 's' : ''}!`;
+    // Update user profile and check Pro status
+    _appEntered = true;
+    if (supabaseClient) {
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (user) {
+          updateAppBar(user);
+          const { data: profile } = await supabaseClient.from('profiles').select('is_pro').eq('user_id', user.id).maybeSingle();
+          if (profile?.is_pro) activatePro();
+        }
+      } catch (e) { console.warn('Tink callback profile fetch:', e); }
+    }
+
+    st.textContent = found.length > 0
+      ? `Found ${found.length} subscription${found.length !== 1 ? 's' : ''}!`
+      : 'No subscriptions detected yet. You can add them manually.';
     setTimeout(() => {
       ld.classList.remove('vis');
+      document.getElementById('onboarding').classList.add('gone');
       document.getElementById('main').classList.add('vis');
       renderList();
       renderIns();
@@ -1249,7 +1254,7 @@ function confirmAddAcct() {
   const row = document.createElement('div');
   row.className = 'acct-row';
   row.onclick = function() { toggleAcct(this); };
-  row.innerHTML = `<div class="acct-dot" style="background:${color};color:#fff">${initials}</div><div class="acct-info"><div class="acct-name">${name}</div><div class="acct-sub">${sub}</div></div><div class="acct-check">${checkSvg}</div>`;
+  row.innerHTML = `<div class="acct-dot" style="background:${color};color:#fff">${esc(initials)}</div><div class="acct-info"><div class="acct-name">${esc(name)}</div><div class="acct-sub">${esc(sub)}</div></div><div class="acct-check">${checkSvg}</div>`;
   const listId = _addAcctMode === 'card' ? 'card-list' : 'bank-list';
   document.getElementById(listId).appendChild(row);
   closeAddAcct();
@@ -1375,9 +1380,10 @@ function startConnect() {
     i++;
     if (i>=LOAD_STEPS.length) {
       clearInterval(iv);
+      SUBS.length = 0;
       if (_plaidTransactions.length > 0) {
         const found = detectSubscriptions(_plaidTransactions);
-        if (found.length > 0) { SUBS.length = 0; SUBS.push(...found); }
+        if (found.length > 0) SUBS.push(...found);
       }
       setTimeout(()=>{
         ld.classList.remove('vis');

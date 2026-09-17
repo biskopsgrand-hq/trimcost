@@ -17,15 +17,17 @@ serve(async (req) => {
     if (!redirect_uri) throw new Error('redirect_uri required')
 
     // 1. Get client access token with authorization:grant scope
+    const basicAuth = btoa(`${CLIENT_ID}:${CLIENT_SECRET}`)
     const tokenRes = await fetch('https://api.tink.com/api/v1/oauth/token', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Authorization': `Basic ${basicAuth}`,
+      },
       body: new URLSearchParams({
-        client_id: CLIENT_ID,
-        client_secret: CLIENT_SECRET,
         grant_type: 'client_credentials',
         scope: 'authorization:grant',
-      }),
+      }).toString(),
     })
     const tokenData = await tokenRes.json()
     if (!tokenData.access_token) {
