@@ -1049,6 +1049,7 @@ function updateSelCount() {
   }
 }
 // ── TINK ──
+const TINK_CLIENT_ID = '8a925a2b66d44c7389bdc07c26da3bbd'; // public identifier
 const FUNCTIONS_URL = 'https://bvvesewuqlvbainaqpye.supabase.co/functions/v1';
 function functionsHeaders() { return { 'apikey': SUPABASE_ANON_KEY, 'Content-Type': 'application/json' }; }
 
@@ -1095,37 +1096,20 @@ function renderTinkAccounts(accounts) {
   if (accounts.length > 0) showToast(`${accounts.length} account${accounts.length !== 1 ? 's' : ''} connected via Tink`);
 }
 
-async function connectWithTink() {
-  const btn = document.getElementById('tink-btn');
-  btn.disabled = true;
-  btn.innerHTML = `<div class="btn-spin"></div> Connecting…`;
-  try {
-    // Stable per-browser user ID so Tink can associate the connection
-    let userId;
-    try {
-      userId = localStorage.getItem('_tinkUserId');
-      if (!userId) {
-        userId = 'tc-' + Math.random().toString(36).slice(2, 10);
-        localStorage.setItem('_tinkUserId', userId);
-      }
-    } catch { userId = 'tc-' + Date.now(); }
-
-    const redirect_uri = window.location.origin + window.location.pathname.replace(/\/+$/, '');
-    const res = await fetch(`${FUNCTIONS_URL}/tink-link-url`, {
-      method: 'POST', headers: functionsHeaders(),
-      body: JSON.stringify({ redirect_uri, user_id: userId }),
-    });
-    const { url, error } = await res.json();
-    if (!url) throw new Error(error || 'Could not get Tink Link URL');
-
-    try { localStorage.setItem('_tinkPending', '1'); } catch {}
-    window.location.href = url; // navigate to Tink Link — returns to redirect_uri?code=...
-  } catch (e) {
-    try { localStorage.removeItem('_tinkPending'); } catch {}
-    showToast('Tink error: ' + e.message);
-    btn.disabled = false;
-    btn.innerHTML = `${_TINK_BTN_HTML} Connect bank with Tink`;
-  }
+function connectWithTink() {
+  // client_id is a public identifier — safe to use client-side
+  // No server call needed for the link URL; only code-exchange needs the secret
+  const redirect_uri = window.location.origin + window.location.pathname.replace(/\/+$/, '');
+  const params = new URLSearchParams({
+    client_id: TINK_CLIENT_ID,
+    redirect_uri,
+    market: 'SE',
+    locale: 'en_US',
+    test: 'true',
+  });
+  const url = `https://link.tink.com/1.0/transactions/connect-accounts?${params}`;
+  try { localStorage.setItem('_tinkPending', '1'); } catch {}
+  window.location.href = url;
 }
 
 // Called on page load when Tink redirects back with ?code=
