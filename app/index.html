@@ -429,7 +429,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="2" y="5" width="20" height="14" rx="2.5" stroke="currentColor" stroke-width="1.8"/><path d="M2 9h20" stroke="currentColor" stroke-width="1.8"/><circle cx="6" cy="14" r="1.3" fill="currentColor"/><rect x="9" y="13" width="4" height="1.8" rx=".9" fill="currentColor"/></svg>
           Connect bank with Tink
         </button>
-        <div class="sandbox-tip">🔐 <strong>Sandbox test</strong> — You'll be redirected to Tink. Select any test bank from the list and complete the flow. You'll return here automatically.</div>
+        <div class="sandbox-tip">🔐 <strong>Secure connection</strong> — You'll be redirected to Tink to securely connect your bank. Your credentials never touch our servers. You'll return here automatically.</div>
 
         <div class="ob-sec-lbl">Checking &amp; savings</div>
         <div class="acct-list" id="bank-list"></div>
@@ -492,9 +492,9 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
     <div class="app-bar">
       <div>
         <div class="app-bar-title">TrimCost</div>
-        <div class="app-bar-sub">September 2026</div>
+        <div class="app-bar-sub" id="app-bar-date">September 2026</div>
       </div>
-      <div class="av">N</div>
+      <div class="av" id="app-av">N</div>
     </div>
 
     <!-- HOME VIEW -->
@@ -550,12 +550,12 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
     <div id="view-pro" class="scroll">
       <div style="padding-top:6px">
         <div class="pro-head">
-          <div class="pro-av">N</div>
-          <div><div class="pro-name">Nicklas</div><div class="pro-email">biskopsgrand@gmail.com</div></div>
+          <div class="pro-av" id="pro-av">N</div>
+          <div><div class="pro-name" id="pro-name">TrimCost</div><div class="pro-email" id="pro-email">—</div></div>
         </div>
         <div class="sg">
           <div class="sg-lbl">Account</div>
-          <div class="si"><div class="si-ic" style="background:var(--accent-soft)"><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1.5" y="3" width="12" height="9" rx="2" stroke="var(--accent)" stroke-width="1.3"/><path d="M1.5 6h12" stroke="var(--accent)" stroke-width="1.3"/><circle cx="4.5" cy="9.5" r="1" fill="var(--accent)"/></svg></div><div><div class="si-l">Connected bank</div><div class="si-d">Chase Bank · ending 4821</div></div><span class="si-r">›</span></div>
+          <div class="si"><div class="si-ic" style="background:var(--accent-soft)"><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1.5" y="3" width="12" height="9" rx="2" stroke="var(--accent)" stroke-width="1.3"/><path d="M1.5 6h12" stroke="var(--accent)" stroke-width="1.3"/><circle cx="4.5" cy="9.5" r="1" fill="var(--accent)"/></svg></div><div><div class="si-l">Connected bank</div><div class="si-d" id="bank-info">Not connected</div></div><span class="si-r">›</span></div>
           <div class="si"><div class="si-ic" style="background:var(--warning-soft)"><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M7.5 1.5L9 5.5H13.5L10 8.2L11.3 12.5L7.5 10L3.7 12.5L5 8.2L1.5 5.5H6L7.5 1.5Z" stroke="var(--warning)" stroke-width="1.3" fill="none"/></svg></div><div><div class="si-l">Renewal alerts</div><div class="si-d">Notified 3 days before charges</div></div><span class="si-r">›</span></div>
         </div>
         <div class="sg" id="sg-sub">
@@ -872,10 +872,12 @@ function closeDetail() { document.getElementById('detail').classList.remove('ope
 
 function spentSince(s) {
   const ms = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const p = s.since.split(' ');
-  const m = ms.indexOf(p[0]), y = parseInt(p[1]);
-  const mo = (2026-y)*12+(8-m);
-  return s.price * Math.max(mo,1);
+  const p = (s.since || '').split(' ');
+  const m = ms.indexOf(p[0]), y = parseInt(p[1]) || 0;
+  if (y === 0) return s.price;
+  const now = new Date();
+  const mo = (now.getFullYear() - y) * 12 + (now.getMonth() - m);
+  return s.price * Math.max(mo, 1);
 }
 
 function renderDet(s) {
@@ -910,7 +912,7 @@ function renderDet(s) {
 
 function togFromDet(id) {
   const s = SUBS.find(x=>x.id===id);
-  if (s) { s.unused=!s.unused; renderList(); renderDet(s); renderIns(); }
+  if (s) { s.unused=!s.unused; renderList(); renderDet(s); renderIns(); updateSubUnusedInSupabase(s); }
 }
 
 // ── INSIGHTS ──
@@ -930,8 +932,7 @@ function renderIns() {
   });
   requestAnimationFrame(()=>{ cb.querySelectorAll('.bar-fill').forEach(e=>e.style.width=e.dataset.w); });
 
-  const mo = [198,211,207,219,214,214.90];
-  const lbl = ['Apr','May','Jun','Jul','Aug','Sep'];
+  const { labels: lbl, totals: mo } = getMonthlyHistory();
   const mx = Math.max(...mo);
   document.getElementById('mobars').innerHTML = mo.map((v,i)=>{
     const h = Math.round((v/mx)*64);
@@ -1011,7 +1012,7 @@ function closeCancelProSheet() {
 async function confirmCancelPro() {
   proCancelled = true;
   closeCancelProSheet();
-  document.getElementById('sub-detail').textContent = `$9.99/yr · access until ${RENEWAL_DATE}`;
+  document.getElementById('sub-detail').textContent = `$10/yr · access until ${RENEWAL_DATE}`;
   document.getElementById('sub-status').textContent = 'CANCELLED';
   document.getElementById('sub-status').style.color = 'var(--text3)';
   document.getElementById('cancel-sub-row').style.display = 'none';
@@ -1141,7 +1142,12 @@ function renderTinkAccounts(accounts) {
     document.getElementById(listId).appendChild(row);
     toggleAcct(row);
   });
-  if (accounts.length > 0) showToast(`${accounts.length} account${accounts.length !== 1 ? 's' : ''} connected via Tink`);
+  if (accounts.length > 0) {
+    showToast(`${accounts.length} account${accounts.length !== 1 ? 's' : ''} connected via Tink`);
+    const firstInst = accounts[0]?.identifiers?.financialInstitution?.name || 'Bank';
+    const bankInfoEl = document.getElementById('bank-info');
+    if (bankInfoEl) bankInfoEl.textContent = `${firstInst} · ${accounts.length} account${accounts.length !== 1 ? 's' : ''}`;
+  }
 }
 
 function connectWithTink() {
@@ -1152,7 +1158,6 @@ function connectWithTink() {
     redirect_uri,
     market: 'SE',
     locale: 'en_US',
-    test: 'true',
   });
   const url = `https://link.tink.com/1.0/transactions/connect-accounts?${params}`;
   try { localStorage.setItem('_tinkPending', '1'); } catch {}
@@ -1526,6 +1531,40 @@ async function deleteSubFromSupabase(sub) {
   } catch (e) { console.warn('deleteSubFromSupabase:', e); }
 }
 
+// ── MONTHLY HISTORY ──
+function getMonthlyHistory() {
+  const MS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const now = new Date();
+  const labels = [], totals = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    labels.push(d.toLocaleDateString('en-US', { month: 'short' }));
+    const yyyymm = d.getFullYear() * 12 + d.getMonth();
+    const total = SUBS.reduce((sum, s) => {
+      if (!s.since) return sum + s.price;
+      const p = s.since.split(' ');
+      const sm = MS.indexOf(p[0].slice(0, 3));
+      const sy = parseInt(p[1]) || 0;
+      if (sy === 0 || sm < 0) return sum + s.price;
+      return sy * 12 + sm <= yyyymm ? sum + s.price : sum;
+    }, 0);
+    totals.push(Math.round(total * 100) / 100);
+  }
+  return { labels, totals };
+}
+
+// ── PROFILE UPDATE ──
+function updateAppBar(user) {
+  const now = new Date();
+  document.getElementById('app-bar-date').textContent = now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  const name = user?.user_metadata?.full_name || user?.email?.split('@')[0] || '';
+  const initials = name.split(/\s+/).map(w => w[0] || '').join('').toUpperCase().slice(0, 2) || '?';
+  document.getElementById('app-av').textContent = initials;
+  document.getElementById('pro-av').textContent = initials;
+  document.getElementById('pro-name').textContent = name || user?.email || '';
+  document.getElementById('pro-email').textContent = user?.email || '';
+}
+
 // ── SUPABASE CONFIG ──
 const SUPABASE_URL      = 'https://bvvesewuqlvbainaqpye.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_ih0xod-COPKut58SiJLV1w_rxBKtwgy';
@@ -1612,6 +1651,8 @@ async function doReset() {
 
 async function doSignOut() {
   try { if (supabaseClient) await supabaseClient.auth.signOut(); } catch {}
+  SUBS.length = 0;
+  _appEntered = false;
   document.getElementById('auth-screen').classList.remove('gone');
   document.getElementById('main').classList.remove('vis');
   document.getElementById('onboarding').classList.remove('gone');
@@ -1619,12 +1660,19 @@ async function doSignOut() {
   showLogin();
 }
 
+let _appEntered = false;
+
 async function enterApp() {
+  if (_appEntered) return;
+  _appEntered = true;
   document.getElementById('auth-screen').classList.add('gone');
   nav('home');
   document.getElementById('view-home').style.display='';
+  // Populate profile with real user data
+  const { data: { user } } = await supabaseClient.auth.getUser();
+  if (user) updateAppBar(user);
   // Check Pro status
-  const { data: profile } = await supabaseClient.from('profiles').select('is_pro').eq('user_id', (await supabaseClient.auth.getUser()).data.user?.id ?? '').maybeSingle();
+  const { data: profile } = await supabaseClient.from('profiles').select('is_pro').eq('user_id', user?.id ?? '').maybeSingle();
   if (profile?.is_pro) activatePro();
 
   // Returning users: load saved subs and skip onboarding
