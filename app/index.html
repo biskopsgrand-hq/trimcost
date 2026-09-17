@@ -1,6 +1,7 @@
 <title>TrimCost</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
 <style>
 :root {
   --bg: #0F0F13;
@@ -111,6 +112,11 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .acct-row.sel .acct-check-ic{opacity:1}
 .add-acct-btn{width:100%;background:transparent;border:1.5px dashed var(--border);border-radius:12px;padding:11px 14px;font-size:13px;color:var(--text2);cursor:pointer;margin-bottom:18px;text-align:center;transition:border-color .15s,color .15s;-webkit-tap-highlight-color:transparent}
 .add-acct-btn:hover{border-color:var(--accent-dim);color:var(--accent)}
+.plaid-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:15px 16px;font-size:14px;font-weight:600;color:var(--text);cursor:pointer;margin-bottom:14px;transition:border-color .15s,background .15s;-webkit-tap-highlight-color:transparent}
+.plaid-btn:hover{border-color:var(--accent-dim);background:var(--accent-soft);color:var(--accent)}
+.plaid-btn:disabled{opacity:.5;cursor:default}
+.sandbox-tip{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 13px;font-size:11px;color:var(--text2);margin-bottom:18px;line-height:1.5}
+.sandbox-tip code{background:var(--surface3);border-radius:4px;padding:1px 5px;font-family:'DM Mono',monospace;color:var(--text);font-size:11px}
 .ob-footer{padding:14px 20px;padding-bottom:calc(14px + env(safe-area-inset-bottom,0px));background:var(--bg);border-top:1px solid var(--border);flex-shrink:0}
 .btn-cta{width:100%;padding:15px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;transition:opacity .15s,transform .1s;-webkit-tap-highlight-color:transparent}
 .btn-cta:disabled{opacity:.35;cursor:not-allowed}
@@ -417,51 +423,19 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
         <div class="ob-tip-t"><strong>Add your credit cards.</strong> Most subscriptions charge to a card, not directly to your bank. Connect your cards for a complete picture.</div>
       </div>
       <div class="ob-scroll">
-        <div class="ob-sec-lbl">Checking &amp; savings</div>
-        <div class="acct-list" id="bank-list">
-          <div class="acct-row" onclick="toggleAcct(this)">
-            <div class="acct-dot" style="background:#0B5ED7;color:#fff">Ch</div>
-            <div class="acct-info"><div class="acct-name">Chase Bank</div><div class="acct-sub">Checking ···4821</div></div>
-            <div class="acct-check"><svg class="acct-check-ic" width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M2 5.5l2.5 2.5 4.5-4.5" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-          </div>
-          <div class="acct-row" onclick="toggleAcct(this)">
-            <div class="acct-dot" style="background:#E31837;color:#fff">BA</div>
-            <div class="acct-info"><div class="acct-name">Bank of America</div><div class="acct-sub">Savings ···7702</div></div>
-            <div class="acct-check"><svg class="acct-check-ic" width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M2 5.5l2.5 2.5 4.5-4.5" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-          </div>
-          <div class="acct-row" onclick="toggleAcct(this)">
-            <div class="acct-dot" style="background:#4CAF50;color:#fff">SEB</div>
-            <div class="acct-info"><div class="acct-name">SEB</div><div class="acct-sub">Checking ···3310</div></div>
-            <div class="acct-check"><svg class="acct-check-ic" width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M2 5.5l2.5 2.5 4.5-4.5" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-          </div>
-        </div>
+        <button id="plaid-btn" class="plaid-btn" onclick="connectWithPlaid()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="2" y="5" width="20" height="14" rx="2.5" stroke="currentColor" stroke-width="1.8"/><path d="M2 9h20" stroke="currentColor" stroke-width="1.8"/><circle cx="6" cy="14" r="1.3" fill="currentColor"/><rect x="9" y="13" width="4" height="1.8" rx=".9" fill="currentColor"/></svg>
+          Connect bank with Plaid
+        </button>
+        <div class="sandbox-tip">🔐 <strong>Sandbox test credentials</strong><br>Username: <code>user_good</code> · Password: <code>pass_good</code> · Any 2FA code</div>
 
-        <button class="add-acct-btn" onclick="openAddAcct('bank')">+ Add bank account</button>
+        <div class="ob-sec-lbl">Checking &amp; savings</div>
+        <div class="acct-list" id="bank-list"></div>
+        <button class="add-acct-btn" onclick="openAddAcct('bank')">+ Add manually</button>
 
         <div class="ob-sec-lbl">Credit cards</div>
-        <div class="acct-list" id="card-list">
-          <div class="acct-row" onclick="toggleAcct(this)">
-            <div class="acct-dot" style="background:#1A1F71;color:#fff">Vi</div>
-            <div class="acct-info"><div class="acct-name">Chase Sapphire</div><div class="acct-sub">Visa ···9214 · most subscriptions here</div></div>
-            <div class="acct-check"><svg class="acct-check-ic" width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M2 5.5l2.5 2.5 4.5-4.5" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-          </div>
-          <div class="acct-row" onclick="toggleAcct(this)">
-            <div class="acct-dot" style="background:#007BC1;color:#fff">Ax</div>
-            <div class="acct-info"><div class="acct-name">Amex Gold</div><div class="acct-sub">Amex ···6603</div></div>
-            <div class="acct-check"><svg class="acct-check-ic" width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M2 5.5l2.5 2.5 4.5-4.5" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-          </div>
-          <div class="acct-row" onclick="toggleAcct(this)">
-            <div class="acct-dot" style="background:#CC0000;color:#fff">Ci</div>
-            <div class="acct-info"><div class="acct-name">Citi Double Cash</div><div class="acct-sub">Mastercard ···1188</div></div>
-            <div class="acct-check"><svg class="acct-check-ic" width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M2 5.5l2.5 2.5 4.5-4.5" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-          </div>
-          <div class="acct-row" onclick="toggleAcct(this)">
-            <div class="acct-dot" style="background:#9D2235;color:#fff">Ca</div>
-            <div class="acct-info"><div class="acct-name">Capital One Venture</div><div class="acct-sub">Visa ···5541</div></div>
-            <div class="acct-check"><svg class="acct-check-ic" width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M2 5.5l2.5 2.5 4.5-4.5" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-          </div>
-        </div>
-        <button class="add-acct-btn" onclick="openAddAcct('card')">+ Add credit / debit card</button>
+        <div class="acct-list" id="card-list"></div>
+        <button class="add-acct-btn" onclick="openAddAcct('card')">+ Add manually</button>
 
         <div style="height:8px"></div>
       </div>
@@ -1061,11 +1035,81 @@ function updateSelCount() {
     btn.textContent = 'Select accounts to continue';
     lbl.textContent = '';
   } else {
-    const cards = document.querySelectorAll('#ob2 .acct-list:nth-of-type(2) .acct-row.sel').length;
+    const cards = document.querySelectorAll('#card-list .acct-row.sel').length;
     btn.textContent = `Scan ${n} account${n>1?'s':''} →`;
     lbl.textContent = cards > 0 ? `${cards} credit card${cards>1?'s':''} included — subscriptions will be detected` : 'Add a credit card for better coverage';
   }
 }
+// ── PLAID ──
+const FUNCTIONS_URL = 'https://bvvesewuqlvbainaqpye.supabase.co/functions/v1';
+const FUNCTIONS_HEADERS = { 'apikey': SUPABASE_ANON_KEY, 'Content-Type': 'application/json' };
+
+const PLAID_TYPE_COLORS = { depository: '#0B5ED7', credit: '#9D2235', investment: '#FF6F00', loan: '#607D8B', other: '#4CAF50' };
+
+async function connectWithPlaid() {
+  const btn = document.getElementById('plaid-btn');
+  btn.disabled = true;
+  btn.innerHTML = `<div class="btn-spin"></div> Connecting…`;
+  try {
+    const tokenRes = await fetch(`${FUNCTIONS_URL}/plaid-link-token`, {
+      method: 'POST', headers: FUNCTIONS_HEADERS,
+    });
+    const { link_token, error_message } = await tokenRes.json();
+    if (!link_token) throw new Error(error_message || 'Could not get link token');
+
+    const handler = Plaid.create({
+      token: link_token,
+      onSuccess: async (public_token, metadata) => {
+        btn.innerHTML = `<div class="btn-spin"></div> Loading accounts…`;
+        try {
+          const acctRes = await fetch(`${FUNCTIONS_URL}/plaid-exchange-token`, {
+            method: 'POST', headers: FUNCTIONS_HEADERS,
+            body: JSON.stringify({ public_token }),
+          });
+          const data = await acctRes.json();
+          if (data.error_message) throw new Error(data.error_message);
+          renderPlaidAccounts(data.accounts || [], metadata.institution);
+        } catch (e) {
+          showToast('Could not load accounts: ' + e.message);
+        }
+        btn.disabled = false;
+        btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="2" y="5" width="20" height="14" rx="2.5" stroke="currentColor" stroke-width="1.8"/><path d="M2 9h20" stroke="currentColor" stroke-width="1.8"/><circle cx="6" cy="14" r="1.3" fill="currentColor"/><rect x="9" y="13" width="4" height="1.8" rx=".9" fill="currentColor"/></svg> Connect another bank`;
+      },
+      onExit: () => {
+        btn.disabled = false;
+        btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="2" y="5" width="20" height="14" rx="2.5" stroke="currentColor" stroke-width="1.8"/><path d="M2 9h20" stroke="currentColor" stroke-width="1.8"/><circle cx="6" cy="14" r="1.3" fill="currentColor"/><rect x="9" y="13" width="4" height="1.8" rx=".9" fill="currentColor"/></svg> Connect bank with Plaid`;
+      },
+    });
+    handler.open();
+  } catch (e) {
+    showToast('Plaid error: ' + e.message);
+    btn.disabled = false;
+    btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="2" y="5" width="20" height="14" rx="2.5" stroke="currentColor" stroke-width="1.8"/><path d="M2 9h20" stroke="currentColor" stroke-width="1.8"/><circle cx="6" cy="14" r="1.3" fill="currentColor"/><rect x="9" y="13" width="4" height="1.8" rx=".9" fill="currentColor"/></svg> Connect bank with Plaid`;
+  }
+}
+
+function renderPlaidAccounts(accounts, institution) {
+  const instName = institution?.name || 'Bank';
+  const checkSvg = `<svg class="acct-check-ic" width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M2 5.5l2.5 2.5 4.5-4.5" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  accounts.forEach(acct => {
+    const isCard = acct.type === 'credit';
+    const listId = isCard ? 'card-list' : 'bank-list';
+    const subtype = (acct.subtype || acct.type || '');
+    const subtypeLabel = subtype.charAt(0).toUpperCase() + subtype.slice(1).replace(/-/g,' ');
+    const name = acct.name || instName;
+    const sub = acct.mask ? `${subtypeLabel} ···${acct.mask}` : subtypeLabel;
+    const initials = name.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 3);
+    const color = PLAID_TYPE_COLORS[acct.type] || PLAID_TYPE_COLORS.other;
+    const row = document.createElement('div');
+    row.className = 'acct-row';
+    row.onclick = function() { toggleAcct(this); };
+    row.innerHTML = `<div class="acct-dot" style="background:${color};color:#fff">${initials}</div><div class="acct-info"><div class="acct-name">${name}</div><div class="acct-sub">${sub}</div></div><div class="acct-check">${checkSvg}</div>`;
+    document.getElementById(listId).appendChild(row);
+    toggleAcct(row);
+  });
+  showToast(`${accounts.length} account${accounts.length !== 1 ? 's' : ''} connected from ${instName}`);
+}
+
 // ── ADD ACCOUNT ──
 const ACCT_COLORS = ['#0B5ED7','#E31837','#4CAF50','#9C27B0','#FF6F00','#00796B','#AD1457','#1565C0','#37474F','#2E7D32'];
 let _addAcctMode = 'bank';
