@@ -1098,8 +1098,7 @@ function renderTinkAccounts(accounts) {
 
 function connectWithTink() {
   // client_id is a public identifier — safe to use client-side
-  // No server call needed for the link URL; only code-exchange needs the secret
-  const redirect_uri = window.location.origin + window.location.pathname.replace(/\/+$/, '');
+  const redirect_uri = 'https://trimcost.app/app'; // must match exactly what's in Tink console
   const params = new URLSearchParams({
     client_id: TINK_CLIENT_ID,
     redirect_uri,
