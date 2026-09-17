@@ -855,7 +855,9 @@ function jumpUnused() {
 }
 
 // ── DETAIL ──
+let _curDetId = null;
 function openDet(id) {
+  _curDetId = id;
   const s = SUBS.find(x=>x.id===id);
   if (!s) return;
   renderDet(s);
@@ -958,6 +960,10 @@ function doUpgrade() {
   document.getElementById('ins-lock').hidden = true;
   document.getElementById('sg-sub').style.display = '';
   showToast('🎉 Welcome to Pro! Trial started.');
+  // Re-render the open detail panel so the cancel button becomes active
+  if (_curDetId !== null && document.getElementById('detail').classList.contains('open')) {
+    openDet(_curDetId);
+  }
 }
 
 // ── CANCEL PRO SUBSCRIPTION ──
