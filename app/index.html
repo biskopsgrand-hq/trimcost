@@ -772,7 +772,12 @@ let SUBS = [
 const CC = {entertainment:'var(--cat-ent)',productivity:'var(--cat-pro)',health:'var(--cat-hlth)'};
 let curFilt = 'all';
 
-const fmt = n => '$' + n.toFixed(2);
+let _currency = 'USD'; // updated when Tink data loads
+const fmt = n => {
+  try {
+    return new Intl.NumberFormat(undefined, { style: 'currency', currency: _currency, maximumFractionDigits: 2 }).format(n);
+  } catch { return '$' + n.toFixed(2); }
+};
 
 function totals() {
   const total = SUBS.reduce((s,x)=>s+x.price,0);
@@ -1067,16 +1072,20 @@ function normalizeTinkTransactions(tinkTxs) {
            (n >= 5700 && n <= 5799) || // furniture & home
            (n >= 5800 && n <= 5814) || // eating places (5815 = digital goods, keep)
            (n >= 4111 && n <= 4131) || // transport
-           [5411,5412,5422,5541,5542,5912,5310,5311,5331,5999].includes(n); // grocery, gas, drug, misc retail
+           [5411,5412,5422,5541,5542,5912,5310,5311,5331,5999].includes(n);
   }
+
+  // Pick up the currency from the first debit transaction
+  const firstWithCurrency = tinkTxs.find(tx => tx.amount?.currencyCode);
+  if (firstWithCurrency) _currency = firstWithCurrency.amount.currencyCode;
 
   return tinkTxs.map(tx => {
     const scale    = tx.amount?.value?.scale ?? 2;
     const unscaled = tx.amount?.value?.unscaledValue ?? 0;
     const raw      = unscaled / Math.pow(10, scale);
-    if (raw >= 0) return null; // skip credits
+    if (raw >= 0) return null;
     const mcc = tx.merchantInformation?.merchantCategoryCode || '';
-    if (isNonSubMcc(mcc)) return null; // skip obvious non-subscriptions by category
+    if (isNonSubMcc(mcc)) return null;
     return {
       amount:        -raw,
       date:          tx.dates?.booked || tx.dates?.value || '',
