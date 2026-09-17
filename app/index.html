@@ -1345,15 +1345,12 @@ function openCancel(id) {
   const url = CANCEL_URLS[s.name];
   const link = document.getElementById('cs-deeplink');
   const linklabel = document.getElementById('cs-deeplink-label');
-  if (url) {
-    link.href = url;
-    link.target = '_blank';
-    link.rel = 'noopener noreferrer';
-    linklabel.textContent = 'Open ' + s.name + ' cancellation page';
-    link.hidden = false;
-  } else {
-    link.hidden = true;
-  }
+  const finalUrl = url || `https://www.google.com/search?q=how+to+cancel+${encodeURIComponent(s.name)}+subscription`;
+  link.href = finalUrl;
+  link.target = '_blank';
+  link.rel = 'noopener noreferrer';
+  linklabel.textContent = url ? 'Open ' + s.name + ' cancellation page' : 'Search how to cancel ' + s.name;
+  link.hidden = false;
   const steps = CANCEL_STEPS[s.name] || DEFAULT_STEPS;
   document.getElementById('cs-steps').innerHTML = steps.map((st,i)=>`
     <div class="cstep">
