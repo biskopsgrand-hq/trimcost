@@ -1634,13 +1634,16 @@ async function doReset() {
   if (!email) { showAuthError('reset-error', 'Enter your email address.'); return; }
   if (!supabaseClient) { showAuthError('reset-error', 'Supabase not configured — add your URL and anon key.'); return; }
   setAuthLoading('reset-btn', true);
-  const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-    redirectTo: window.location.href
-  });
-  setAuthLoading('reset-btn', false);
-  if (error) { showAuthError('reset-error', error.message); return; }
-  showToast('📬 Reset link sent — check your inbox.');
-  showLogin();
+  try {
+    const res = await supabaseClient.functions.invoke('send-reset-email', { body: { email } });
+    setAuthLoading('reset-btn', false);
+    if (res.error) { showAuthError('reset-error', 'Could not send reset email. Try again.'); return; }
+    showToast('📬 Reset link sent — check your inbox.');
+    showLogin();
+  } catch (e) {
+    setAuthLoading('reset-btn', false);
+    showAuthError('reset-error', 'Could not send reset email. Try again.');
+  }
 }
 
 function resetToLoginScreen() {
