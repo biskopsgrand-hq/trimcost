@@ -1320,7 +1320,7 @@ function detectSubscriptions(transactions) {
       price: Math.round(avg * 100) / 100,
       last:  fmtD(last),
       next:  nextDt.toLocaleDateString('en-US', { month:'short', day:'numeric' }),
-      since: fmtD(txs[0].date),
+      since: new Date(txs[0].date + 'T12:00:00').toLocaleDateString('en-US', { month:'short', year:'numeric' }),
       unused: false,
     });
   }
