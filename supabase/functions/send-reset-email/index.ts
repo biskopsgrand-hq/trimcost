@@ -1,5 +1,4 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -13,22 +12,37 @@ serve(async (req) => {
     const { email } = await req.json()
     if (!email) return new Response(JSON.stringify({ error: 'Email required' }), { status: 400, headers: CORS })
 
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-    )
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const serviceRoleKey = Deno.env.get('SERVICE_ROLE_KEY')!
 
-    const { data, error } = await supabaseAdmin.auth.admin.generateLink({
-      type: 'recovery',
-      email,
-      options: { redirectTo: 'https://trimcost.app/app' },
+    console.log('SUPABASE_URL present:', !!supabaseUrl)
+    console.log('SERVICE_ROLE_KEY length:', serviceRoleKey?.length ?? 0)
+    console.log('SERVICE_ROLE_KEY starts with:', serviceRoleKey?.substring(0, 10))
+
+    // Generate recovery link via Supabase Admin REST API (no SDK)
+    const linkRes = await fetch(`${supabaseUrl}/auth/v1/admin/generate_link`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${serviceRoleKey}`,
+        'apikey': serviceRoleKey,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        type: 'recovery',
+        email,
+        redirect_to: 'https://trimcost.app/app',
+      }),
     })
 
-    if (error || !data?.properties?.action_link) {
-      return new Response(JSON.stringify({ error: error?.message || 'Could not generate reset link' }), { status: 400, headers: CORS })
+    if (!linkRes.ok) {
+      const err = await linkRes.text()
+      console.error('generateLink failed:', linkRes.status, err)
+      return new Response(JSON.stringify({ error: err }), { status: 400, headers: CORS })
     }
 
-    const resetUrl = data.properties.action_link
+    const linkData = await linkRes.json()
+    const resetUrl = linkData.action_link
+    console.log('Got action_link:', !!resetUrl)
 
     const html = `
 <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;background:#052e16;border-radius:16px">
@@ -47,10 +61,14 @@ serve(async (req) => {
   <p style="font-size:12px;color:#4ade8088;margin-top:32px">If you didn't request a password reset, you can safely ignore this email. Your password won't change.</p>
 </div>`
 
+    const resendKey = Deno.env.get('RESEND_API_KEY') ?? ''
+    console.log('RESEND_API_KEY length:', resendKey.length)
+    console.log('RESEND_API_KEY starts with:', resendKey.substring(0, 5))
+
     const resendRes = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${Deno.env.get('RESEND_API_KEY')}`,
+        'Authorization': `Bearer ${resendKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -63,11 +81,14 @@ serve(async (req) => {
 
     if (!resendRes.ok) {
       const err = await resendRes.text()
+      console.error('Resend failed:', err)
       return new Response(JSON.stringify({ error: err }), { status: 500, headers: CORS })
     }
 
+    console.log('Email sent successfully')
     return new Response(JSON.stringify({ ok: true }), { headers: CORS })
   } catch (e) {
+    console.error('Uncaught error:', e)
     return new Response(JSON.stringify({ error: String(e) }), { status: 500, headers: CORS })
   }
 })
