@@ -334,6 +334,9 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 /* reset password panel */
 #auth-reset{display:none}
 #auth-reset.vis{display:block}
+/* set new password panel */
+#auth-newpass{display:none}
+#auth-newpass.vis{display:block}
 .auth-back-link{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text2);cursor:pointer;margin-bottom:24px;width:fit-content;-webkit-tap-highlight-color:transparent}
 .auth-back-link:hover{color:var(--text)}
 /* spinner inside button */
@@ -626,6 +629,21 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
         </div>
         <div class="auth-error" id="reset-error"></div>
         <button class="auth-submit" id="reset-btn" onclick="doReset()">Send reset link</button>
+      </div>
+
+      <div id="auth-newpass">
+        <div class="auth-h">Set new password</div>
+        <div class="auth-sub">Choose a new password for your account.</div>
+        <div class="auth-field">
+          <label class="auth-label" for="newpass-pw">New password</label>
+          <input class="auth-input" id="newpass-pw" type="password" placeholder="At least 6 characters" autocomplete="new-password">
+        </div>
+        <div class="auth-field">
+          <label class="auth-label" for="newpass-pw2">Confirm password</label>
+          <input class="auth-input" id="newpass-pw2" type="password" placeholder="Same password again" autocomplete="new-password">
+        </div>
+        <div class="auth-error" id="newpass-error"></div>
+        <button class="auth-submit" id="newpass-btn" onclick="doSetNewPassword()">Set password</button>
       </div>
     </div>
   </div>
@@ -1588,9 +1606,24 @@ function clearErrors() {
   document.querySelectorAll('.auth-input').forEach(i=>i.classList.remove('err'));
 }
 
-function showLogin()  { clearErrors(); document.getElementById('auth-login').style.display=''; document.getElementById('auth-signup').style.display='none'; document.getElementById('auth-reset').classList.remove('vis'); }
-function showSignup() { clearErrors(); document.getElementById('auth-login').style.display='none'; document.getElementById('auth-signup').style.display=''; document.getElementById('auth-reset').classList.remove('vis'); document.getElementById('signup-confirm').classList.remove('vis'); document.querySelectorAll('#auth-signup .auth-field, #signup-btn, #auth-signup .auth-switch').forEach(el => el.style.display = ''); }
-function showReset()  { clearErrors(); document.getElementById('auth-login').style.display='none'; document.getElementById('auth-signup').style.display='none'; document.getElementById('auth-reset').classList.add('vis'); }
+function showLogin()       { clearErrors(); document.getElementById('auth-login').style.display=''; document.getElementById('auth-signup').style.display='none'; document.getElementById('auth-reset').classList.remove('vis'); document.getElementById('auth-newpass').classList.remove('vis'); }
+function showSignup()      { clearErrors(); document.getElementById('auth-login').style.display='none'; document.getElementById('auth-signup').style.display=''; document.getElementById('auth-reset').classList.remove('vis'); document.getElementById('auth-newpass').classList.remove('vis'); document.getElementById('signup-confirm').classList.remove('vis'); document.querySelectorAll('#auth-signup .auth-field, #signup-btn, #auth-signup .auth-switch').forEach(el => el.style.display = ''); }
+function showReset()       { clearErrors(); document.getElementById('auth-login').style.display='none'; document.getElementById('auth-signup').style.display='none'; document.getElementById('auth-reset').classList.add('vis'); document.getElementById('auth-newpass').classList.remove('vis'); }
+function showNewPassword() { clearErrors(); document.getElementById('auth-login').style.display='none'; document.getElementById('auth-signup').style.display='none'; document.getElementById('auth-reset').classList.remove('vis'); document.getElementById('auth-newpass').classList.add('vis'); }
+
+async function doSetNewPassword() {
+  clearErrors();
+  const pw  = document.getElementById('newpass-pw').value;
+  const pw2 = document.getElementById('newpass-pw2').value;
+  if (pw.length < 6)  { showAuthError('newpass-error', 'Password must be at least 6 characters.'); return; }
+  if (pw !== pw2)     { showAuthError('newpass-error', 'Passwords do not match.'); return; }
+  setAuthLoading('newpass-btn', true);
+  const { error } = await supabaseClient.auth.updateUser({ password: pw });
+  setAuthLoading('newpass-btn', false);
+  if (error) { showAuthError('newpass-error', error.message); return; }
+  showToast('Password updated! Signing you in…');
+  showLogin();
+}
 
 async function doLogin() {
   clearErrors();
@@ -1752,8 +1785,9 @@ document.getElementById('view-home').style.display='';
   if (session) enterApp();
 
   supabaseClient.auth.onAuthStateChange((event, session) => {
-    if (event === 'SIGNED_IN'  && session) enterApp();
-    if (event === 'SIGNED_OUT')             resetToLoginScreen();
+    if (event === 'PASSWORD_RECOVERY')      showNewPassword();
+    else if (event === 'SIGNED_IN' && session) enterApp();
+    else if (event === 'SIGNED_OUT')        resetToLoginScreen();
   });
 })();
 </script>
