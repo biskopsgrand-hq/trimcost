@@ -1781,13 +1781,18 @@ document.getElementById('view-home').style.display='';
 
   if (!supabaseClient) return; // auth-screen already visible
 
-  const { data: { session } } = await supabaseClient.auth.getSession();
-  if (session) enterApp();
+  // If this is a password recovery redirect, wait for onAuthStateChange to fire
+  // PASSWORD_RECOVERY — don't auto-enter the app from the token in the URL hash.
+  const isRecovery = window.location.hash.includes('type=recovery');
+  if (!isRecovery) {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (session) enterApp();
+  }
 
   supabaseClient.auth.onAuthStateChange((event, session) => {
-    if (event === 'PASSWORD_RECOVERY')      showNewPassword();
-    else if (event === 'SIGNED_IN' && session) enterApp();
-    else if (event === 'SIGNED_OUT')        resetToLoginScreen();
+    if (event === 'PASSWORD_RECOVERY')         showNewPassword();
+    else if (event === 'SIGNED_IN' && session) { if (!isRecovery) enterApp(); }
+    else if (event === 'SIGNED_OUT')           resetToLoginScreen();
   });
 })();
 </script>
