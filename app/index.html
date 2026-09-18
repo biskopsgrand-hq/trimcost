@@ -314,6 +314,11 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .auth-input.err{border-color:var(--danger)}
 .auth-error{font-size:12px;color:var(--danger);margin-top:-8px;margin-bottom:6px;min-height:16px;display:none}
 .auth-error.vis{display:block}
+.auth-confirm{display:none;text-align:center;padding:24px 0 8px}
+.auth-confirm.vis{display:block}
+.auth-confirm-ic{font-size:36px;margin-bottom:12px}
+.auth-confirm-h{font-size:17px;font-weight:700;color:var(--text);margin-bottom:6px}
+.auth-confirm-d{font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:20px}
 .auth-forgot{font-size:12px;color:var(--text2);text-align:right;margin-top:-8px;margin-bottom:16px;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .auth-forgot:hover{color:var(--text)}
 .auth-submit{width:100%;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:11px;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;transition:opacity .15s,transform .1s;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:20px;-webkit-tap-highlight-color:transparent}
@@ -599,6 +604,12 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
         <div class="auth-error" id="signup-error"></div>
         <button class="auth-submit" id="signup-btn" onclick="doSignup()" style="margin-top:6px">Create account</button>
         <div class="auth-switch">Already have one? <span class="auth-switch-link" onclick="showLogin()">Sign in</span></div>
+        <div class="auth-confirm" id="signup-confirm">
+          <div class="auth-confirm-ic">📬</div>
+          <div class="auth-confirm-h">Check your email</div>
+          <div class="auth-confirm-d">We sent a confirmation link to <strong id="confirm-email"></strong>. Click it to activate your account, then come back to sign in.</div>
+          <button class="auth-submit" onclick="showLogin()">Go to sign in</button>
+        </div>
       </div>
 
       <!-- RESET PASSWORD -->
@@ -1578,7 +1589,7 @@ function clearErrors() {
 }
 
 function showLogin()  { clearErrors(); document.getElementById('auth-login').style.display=''; document.getElementById('auth-signup').style.display='none'; document.getElementById('auth-reset').classList.remove('vis'); }
-function showSignup() { clearErrors(); document.getElementById('auth-login').style.display='none'; document.getElementById('auth-signup').style.display=''; document.getElementById('auth-reset').classList.remove('vis'); }
+function showSignup() { clearErrors(); document.getElementById('auth-login').style.display='none'; document.getElementById('auth-signup').style.display=''; document.getElementById('auth-reset').classList.remove('vis'); document.getElementById('signup-confirm').classList.remove('vis'); document.querySelectorAll('#auth-signup .auth-field, #signup-btn, #auth-signup .auth-switch').forEach(el => el.style.display = ''); }
 function showReset()  { clearErrors(); document.getElementById('auth-login').style.display='none'; document.getElementById('auth-signup').style.display='none'; document.getElementById('auth-reset').classList.add('vis'); }
 
 async function doLogin() {
@@ -1609,9 +1620,12 @@ async function doSignup() {
   });
   setAuthLoading('signup-btn', false);
   if (error) { showAuthError('signup-error', error.message); return; }
-  showAuthError('signup-error', '');
-  showToast('📬 Check your email to confirm your account.');
-  showLogin();
+  document.getElementById('confirm-email').textContent = email;
+  document.getElementById('su-name').value = '';
+  document.getElementById('su-email').value = '';
+  document.getElementById('su-pass').value = '';
+  document.querySelectorAll('#auth-signup .auth-field, #auth-signup .auth-error, #signup-btn, #auth-signup .auth-switch').forEach(el => el.style.display = 'none');
+  document.getElementById('signup-confirm').classList.add('vis');
 }
 
 async function doReset() {
