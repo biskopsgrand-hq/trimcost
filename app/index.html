@@ -107,11 +107,13 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .hero-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);font-weight:600;margin-bottom:5px}
 .hero-num{font-family:'DM Mono',monospace;font-size:40px;font-weight:500;letter-spacing:-1px;line-height:1;font-variant-numeric:tabular-nums;margin-bottom:3px}
 .hero-sub{font-size:11px;color:var(--text2);margin-bottom:18px}
-.stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
 .stat-v{font-family:'DM Mono',monospace;font-size:16px;font-weight:500;font-variant-numeric:tabular-nums}
 .stat-v.red{color:var(--danger)}
-.stat-v.grn{color:var(--accent)}
 .stat-l{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;font-weight:600;margin-top:1px}
+.save-row{display:flex;align-items:center;justify-content:space-between;background:rgba(74,222,128,.08);border:1px solid rgba(74,222,128,.18);border-radius:12px;padding:10px 14px}
+.save-row-l{font-size:10px;text-transform:uppercase;letter-spacing:.7px;color:var(--accent);font-weight:600}
+.save-row-v{font-family:'DM Mono',monospace;font-size:26px;font-weight:500;font-variant-numeric:tabular-nums;color:var(--accent)}
 
 /* ── SAVINGS BANNER ── */
 .save-banner{margin:0 16px 14px;background:var(--danger-soft);border:1px solid rgba(255,88,112,.2);border-radius:13px;padding:13px 15px;display:flex;align-items:center;gap:11px;cursor:pointer;transition:background .15s;-webkit-tap-highlight-color:transparent}
@@ -466,7 +468,10 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
         <div class="stats">
           <div><div class="stat-v" id="st-cnt">0</div><div class="stat-l">Active</div></div>
           <div><div class="stat-v red" id="st-bad">0</div><div class="stat-l">Unused</div></div>
-          <div><div class="stat-v grn" id="st-save">$0</div><div class="stat-l">Could save</div></div>
+        </div>
+        <div class="save-row">
+          <div class="save-row-l">Could save / mo</div>
+          <div class="save-row-v" id="st-save">$0</div>
         </div>
       </div>
 
