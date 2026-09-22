@@ -558,11 +558,15 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
     <div id="view-admin" class="scroll" style="display:none;padding:0 16px;padding-bottom:110px">
       <div style="padding:20px 0 12px"><div style="font-size:18px;font-weight:700">Admin Dashboard</div><div style="font-size:12px;color:var(--text2);margin-top:3px">Live stats · biskopsgrand@gmail.com</div></div>
       <div id="admin-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">
-        <div class="admin-card"><div class="admin-v" id="adm-users">—</div><div class="admin-l">Total users</div></div>
+        <div class="admin-card" onclick="toggleUserList()" style="cursor:pointer"><div class="admin-v" id="adm-users">—</div><div class="admin-l">Total users ›</div></div>
         <div class="admin-card"><div class="admin-v" id="adm-recent">—</div><div class="admin-l">Signups (7d)</div></div>
         <div class="admin-card"><div class="admin-v" id="adm-pro" style="color:var(--accent)">—</div><div class="admin-l">Pro subscribers</div></div>
         <div class="admin-card"><div class="admin-v" id="adm-banks">—</div><div class="admin-l">Banks connected</div></div>
         <div class="admin-card" style="grid-column:1/-1"><div class="admin-v" id="adm-subs">—</div><div class="admin-l">Subscriptions detected (all users)</div></div>
+      </div>
+      <div id="adm-user-list" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:12px;margin-bottom:10px;overflow:hidden">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);font-weight:600;padding:12px 16px 8px">All users</div>
+        <div id="adm-user-rows"></div>
       </div>
       <a href="https://dashboard.stripe.com" target="_blank" style="display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;text-decoration:none;color:var(--text);margin-bottom:10px">
         <div><div style="font-size:13px;font-weight:600">Stripe Dashboard</div><div style="font-size:11px;color:var(--text2);margin-top:2px">Revenue, MRR, subscribers</div></div>
@@ -1612,6 +1616,8 @@ function updateAppBar(user) {
   }
 }
 
+let _adminUsers = [];
+
 async function loadAdminStats() {
   try {
     const { data: { session } } = await supabaseClient.auth.getSession();
@@ -1626,7 +1632,27 @@ async function loadAdminStats() {
     document.getElementById('adm-pro').textContent    = d.proUsers ?? '—';
     document.getElementById('adm-banks').textContent  = d.connectedUsers ?? '—';
     document.getElementById('adm-subs').textContent   = d.totalSubs ?? '—';
+    _adminUsers = d.users ?? [];
+    renderUserList();
   } catch (e) { console.warn('loadAdminStats', e); }
+}
+
+function toggleUserList() {
+  const el = document.getElementById('adm-user-list');
+  el.style.display = el.style.display === 'none' ? '' : 'none';
+}
+
+function renderUserList() {
+  const container = document.getElementById('adm-user-rows');
+  if (!_adminUsers.length) { container.innerHTML = '<div style="padding:10px 16px;font-size:13px;color:var(--text2)">No users yet</div>'; return; }
+  container.innerHTML = _adminUsers.map(u => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-top:1px solid var(--border)">
+      <div>
+        <div style="font-size:13px;font-weight:500">${u.email}</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:1px">${new Date(u.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</div>
+      </div>
+      ${u.is_pro ? '<span style="font-size:10px;font-weight:700;color:var(--accent);background:rgba(74,222,128,.12);padding:3px 8px;border-radius:6px">PRO</span>' : ''}
+    </div>`).join('');
 }
 
 // ── SUPABASE CONFIG ──

@@ -52,12 +52,26 @@ serve(async (req) => {
       .from('subscriptions')
       .select('*', { count: 'exact', head: true })
 
+    // Get pro user IDs for labelling
+    const { data: proProfiles } = await supabaseAdmin
+      .from('profiles')
+      .select('user_id')
+      .eq('is_pro', true)
+    const proIds = new Set((proProfiles ?? []).map((p: any) => p.user_id))
+
+    const userList = (users ?? []).map(u => ({
+      email: u.email,
+      created_at: u.created_at,
+      is_pro: proIds.has(u.id),
+    })).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+
     return new Response(JSON.stringify({
       totalUsers,
       recentSignups,
       proUsers: proUsers ?? 0,
       connectedUsers,
       totalSubs: totalSubs ?? 0,
+      users: userList,
     }), { headers: { ...CORS, 'Content-Type': 'application/json' } })
 
   } catch (e) {
