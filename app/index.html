@@ -573,7 +573,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
         <div><div style="font-size:13px;font-weight:600">Stripe Dashboard</div><div style="font-size:11px;color:var(--text2);margin-top:2px">Revenue, MRR, subscribers</div></div>
         <span style="color:var(--text2)">›</span>
       </a>
-      <button onclick="loadAdminStats()" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:11px;font-size:13px;color:var(--text2);cursor:pointer;margin-top:4px">Refresh stats</button>
+      <button id="adm-refresh-btn" onclick="loadAdminStats()" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:11px;font-size:13px;color:var(--text2);cursor:pointer;margin-top:4px">Refresh stats</button>
     </div>
 
     <div class="bnav">
@@ -1620,13 +1620,21 @@ function updateAppBar(user) {
 let _adminUsers = [];
 
 async function loadAdminStats() {
+  const btn = document.getElementById('adm-refresh-btn');
+  if (btn) { btn.textContent = 'Loading…'; btn.disabled = true; }
   try {
     const { data: { session } } = await supabaseClient.auth.getSession();
-    if (!session) return;
+    if (!session) { if (btn) { btn.textContent = 'Refresh stats'; btn.disabled = false; } return; }
     const res = await fetch(`${FUNCTIONS_URL}/admin-stats`, {
       headers: { 'Authorization': `Bearer ${session.access_token}`, 'apikey': SUPABASE_ANON_KEY }
     });
-    if (!res.ok) return;
+    if (!res.ok) {
+      const err = await res.text();
+      console.error('admin-stats error:', res.status, err);
+      showToast('Failed to load stats: ' + res.status);
+      if (btn) { btn.textContent = 'Refresh stats'; btn.disabled = false; }
+      return;
+    }
     const d = await res.json();
     document.getElementById('adm-users').textContent  = d.totalUsers ?? '—';
     document.getElementById('adm-recent').textContent = d.recentSignups ?? '—';
@@ -1635,7 +1643,12 @@ async function loadAdminStats() {
     document.getElementById('adm-subs').textContent   = d.totalSubs ?? '—';
     _adminUsers = d.users ?? [];
     renderUserList();
-  } catch (e) { console.warn('loadAdminStats', e); }
+    if (btn) { btn.textContent = 'Refresh stats'; btn.disabled = false; }
+  } catch (e) {
+    console.warn('loadAdminStats', e);
+    showToast('Error loading stats');
+    if (btn) { btn.textContent = 'Refresh stats'; btn.disabled = false; }
+  }
 }
 
 function toggleUserList() {
