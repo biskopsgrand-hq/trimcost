@@ -1289,8 +1289,9 @@ function confirmAddAcct() {
   const checkSvg = `<svg class="acct-check-ic" width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M2 5.5l2.5 2.5 4.5-4.5" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
   const row = document.createElement('div');
   row.className = 'acct-row';
+  row.dataset.manual = '1';
   row.onclick = function() { toggleAcct(this); };
-  row.innerHTML = `<div class="acct-dot" style="background:${color};color:#fff">${esc(initials)}</div><div class="acct-info"><div class="acct-name">${esc(name)}</div><div class="acct-sub">${esc(sub)}</div></div><div class="acct-check">${checkSvg}</div>`;
+  row.innerHTML = `<div class="acct-dot" style="background:${color};color:#fff">${esc(initials)}</div><div class="acct-info"><div class="acct-name">${esc(name)}</div><div class="acct-sub">${esc(sub)}</div></div><button onclick="event.stopPropagation();this.closest('.acct-row').remove();updateSelCount();" style="background:none;border:none;cursor:pointer;padding:4px;color:var(--text3);font-size:16px;line-height:1;flex-shrink:0" title="Remove">×</button>`;
   const listId = _addAcctMode === 'card' ? 'card-list' : 'bank-list';
   document.getElementById(listId).appendChild(row);
   closeAddAcct();
