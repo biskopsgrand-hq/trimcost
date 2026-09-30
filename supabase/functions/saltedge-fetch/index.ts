@@ -5,7 +5,7 @@ const CORS = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const BASE = 'https://www.saltedge.com/api/v5'
+const BASE = 'https://www.saltedge.com/api/v6'
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
@@ -24,22 +24,26 @@ serve(async (req) => {
     const acctData = await acctRes.json()
     if (!acctRes.ok) throw new Error(acctData.error?.message || JSON.stringify(acctData))
 
-    // Fetch transactions — paginate up to 10 pages (10k transactions)
+    const accounts = acctData.data || []
+
+    // Fetch transactions per account — v6 requires account_id
     const txAll: any[] = []
-    let nextId: string | null = null
-    for (let page = 0; page < 10; page++) {
-      let url = `${BASE}/transactions?connection_id=${connection_id}&per_page=1000`
-      if (nextId) url += `&from_id=${nextId}`
-      const txRes = await fetch(url, { headers: hdrs })
-      const txData = await txRes.json()
-      if (!txRes.ok) break
-      if (Array.isArray(txData.data)) txAll.push(...txData.data)
-      if (!txData.meta?.next_id) break
-      nextId = txData.meta.next_id
+    for (const acct of accounts) {
+      let nextId: string | null = null
+      for (let page = 0; page < 5; page++) {
+        let url = `${BASE}/transactions?connection_id=${connection_id}&account_id=${acct.id}&per_page=1000`
+        if (nextId) url += `&from_id=${nextId}`
+        const txRes = await fetch(url, { headers: hdrs })
+        const txData = await txRes.json()
+        if (!txRes.ok) break
+        if (Array.isArray(txData.data)) txAll.push(...txData.data)
+        if (!txData.meta?.next_id) break
+        nextId = txData.meta.next_id
+      }
     }
 
     return new Response(JSON.stringify({
-      accounts: acctData.data || [],
+      accounts,
       transactions: txAll,
     }), { headers: { ...CORS, 'Content-Type': 'application/json' } })
   } catch (err) {

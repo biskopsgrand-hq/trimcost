@@ -393,19 +393,23 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
         <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M9.5 12L5 7.5 9.5 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </div>
       <div class="ob2-hdr">
-        <div class="ob2-title">Connect your accounts</div>
-        <div class="ob2-sub">Select the accounts where you pay for subscriptions.</div>
+        <div class="ob2-title">Scan email for subscriptions</div>
+        <div class="ob2-sub">We scan your inbox for receipts and find recurring charges automatically.</div>
       </div>
       <div class="ob-tip">
-        <span class="ob-tip-ic">💡</span>
-        <div class="ob-tip-t"><strong>Add your credit cards.</strong> Most subscriptions charge to a card, not directly to your bank. Connect your cards for a complete picture.</div>
+        <span class="ob-tip-ic">🔒</span>
+        <div class="ob-tip-t"><strong>Read-only access.</strong> We only scan for subscription receipts. Your email password never touches our servers — Google and Microsoft handle sign-in directly.</div>
       </div>
       <div class="ob-scroll">
-        <button id="se-btn" class="plaid-btn" onclick="connectWithSaltEdge()">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="2" y="5" width="20" height="14" rx="2.5" stroke="currentColor" stroke-width="1.8"/><path d="M2 9h20" stroke="currentColor" stroke-width="1.8"/><circle cx="6" cy="14" r="1.3" fill="currentColor"/><rect x="9" y="13" width="4" height="1.8" rx=".9" fill="currentColor"/></svg>
-          Connect &amp; find leaks →
+        <button id="gmail-btn" class="plaid-btn" onclick="connectGmail()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M2 6l10 7L22 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><rect x="2" y="4" width="20" height="16" rx="2" stroke="currentColor" stroke-width="1.8"/></svg>
+          Scan Gmail →
         </button>
-        <div class="sandbox-tip">🔐 <strong>Secure connection</strong> — You'll be redirected to securely connect your bank. Your credentials never touch our servers. You'll return here automatically.</div>
+        <button id="outlook-btn" class="plaid-btn" onclick="connectOutlook()" style="margin-top:-4px">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="2" y="4" width="20" height="16" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M2 8h20M8 4v16" stroke="currentColor" stroke-width="1.8"/></svg>
+          Scan Outlook / Hotmail →
+        </button>
+        <div class="sandbox-tip">📧 We search for receipts, invoices and renewal emails — nothing else is read or stored.</div>
 
         <div class="ob-sec-lbl">Checking &amp; savings</div>
         <div class="acct-list" id="bank-list"></div>
@@ -546,8 +550,8 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
         </div>
         <div class="sg">
           <div class="sg-lbl">Account</div>
-          <div class="si" style="cursor:default"><div class="si-ic" style="background:var(--accent-soft)"><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1.5" y="3" width="12" height="9" rx="2" stroke="var(--accent)" stroke-width="1.3"/><path d="M1.5 6h12" stroke="var(--accent)" stroke-width="1.3"/><circle cx="4.5" cy="9.5" r="1" fill="var(--accent)"/></svg></div><div><div class="si-l">Connected bank</div><div class="si-d" id="bank-info">Not connected</div></div></div>
-          <div class="si" onclick="connectWithSaltEdge()" style="cursor:pointer"><div class="si-ic" style="background:var(--accent-soft)"><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M7.5 2v11M2 7.5h11" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round"/></svg></div><div><div class="si-l">Add bank account</div><div class="si-d">Connect another bank or card</div></div><span class="si-r">›</span></div>
+          <div class="si" style="cursor:default"><div class="si-ic" style="background:var(--accent-soft)"><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M1.5 3h12v9H1.5z" rx="1.5" stroke="var(--accent)" stroke-width="1.3"/><path d="M1.5 6h12" stroke="var(--accent)" stroke-width="1.3"/></svg></div><div><div class="si-l">Email scan</div><div class="si-d" id="bank-info">Not scanned yet</div></div></div>
+          <div class="si" onclick="showEmailPicker()" style="cursor:pointer"><div class="si-ic" style="background:var(--accent-soft)"><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M7.5 2v11M2 7.5h11" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round"/></svg></div><div><div class="si-l">Scan email for subscriptions</div><div class="si-d">Gmail or Outlook / Hotmail</div></div><span class="si-r">›</span></div>
           <div class="si" style="cursor:default"><div class="si-ic" style="background:var(--warning-soft)"><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M7.5 1.5L9 5.5H13.5L10 8.2L11.3 12.5L7.5 10L3.7 12.5L5 8.2L1.5 5.5H6L7.5 1.5Z" stroke="var(--warning)" stroke-width="1.3" fill="none"/></svg></div><div><div class="si-l">Renewal alerts</div><div class="si-d">Notified 3 days before charges</div></div></div>
         </div>
         <div class="sg" id="sg-sub" style="display:none">
@@ -1108,112 +1112,117 @@ function updateSelCount() {
     lbl.textContent = cards > 0 ? `${cards} credit card${cards>1?'s':''} included — subscriptions will be detected` : 'Add a credit card for better coverage';
   }
 }
-// ── SALT EDGE ──
+// ── EMAIL SCANNING ──
 const FUNCTIONS_URL = 'https://bvvesewuqlvbainaqpye.supabase.co/functions/v1';
 function functionsHeaders() { return { 'apikey': SUPABASE_ANON_KEY, 'Content-Type': 'application/json' }; }
 
-let _plaidTransactions = []; // generic name kept for detect pipeline compatibility
+const GMAIL_CLIENT_ID = '733072221188-9ouc8j9ao9spkonebqaecb15334m3o8e.apps.googleusercontent.com';
+const OUTLOOK_CLIENT_ID = 'YOUR_OUTLOOK_CLIENT_ID'; // fill in after Azure setup
+const REDIRECT_URI = 'https://trimcost.app/app';
 
-function normalizeSaltEdgeTransactions(txs) {
-  function isNonSubMcc(mcc) {
-    if (!mcc) return false;
-    const n = parseInt(mcc);
-    return (n >= 5300 && n <= 5599) ||
-           (n >= 5600 && n <= 5699) ||
-           (n >= 5700 && n <= 5799) ||
-           (n >= 5800 && n <= 5814) ||
-           (n >= 4111 && n <= 4131) ||
-           [5411,5412,5422,5541,5542,5912,5310,5311,5331,5999].includes(n);
-  }
-
-  const firstWithCurrency = txs.find(tx => tx.currency_code);
-  if (firstWithCurrency) _currency = firstWithCurrency.currency_code;
-
-  return txs.map(tx => {
-    const raw = parseFloat(tx.amount) || 0;
-    if (raw >= 0) return null;
-    if (isNonSubMcc(tx.category?.code)) return null;
-    return {
-      amount:        -raw,
-      date:          tx.made_on || '',
-      merchant_name: tx.extra?.merchant_name || tx.description || '',
-      name:          tx.description || '',
-    };
-  }).filter(tx => tx && tx.amount > 0 && tx.date);
-}
-
-function renderSaltEdgeAccounts(accounts) {
-  const checkSvg = `<svg class="acct-check-ic" width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M2 5.5l2.5 2.5 4.5-4.5" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-  const TYPE_COLORS = { account: '#0B5ED7', savings: '#2196F3', card: '#9D2235', investment: '#FF6F00', bonus: '#FF6F00', loan: '#AD1457' };
-  accounts.forEach(acct => {
-    const nature  = (acct.nature || 'account').toLowerCase();
-    const isCard  = nature === 'card' || nature === 'credit_card';
-    const listId  = isCard ? 'card-list' : 'bank-list';
-    const name    = acct.name || 'Account';
-    const inst    = acct.connection?.provider_name || '';
-    const label   = nature.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-    const sub     = inst ? `${inst} · ${label}` : label;
-    const initials = name.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 3) || '??';
-    const color   = TYPE_COLORS[nature] || TYPE_COLORS.account;
-    const row = document.createElement('div');
-    row.className = 'acct-row';
-    row.onclick = function() { toggleAcct(this); };
-    row.innerHTML = `<div class="acct-dot" style="background:${color};color:#fff">${esc(initials)}</div><div class="acct-info"><div class="acct-name">${esc(name)}</div><div class="acct-sub">${esc(sub)}</div></div><div class="acct-check">${checkSvg}</div>`;
-    document.getElementById(listId).appendChild(row);
-    toggleAcct(row);
+function connectGmail() {
+  const params = new URLSearchParams({
+    client_id: GMAIL_CLIENT_ID,
+    redirect_uri: REDIRECT_URI,
+    scope: 'https://www.googleapis.com/auth/gmail.readonly',
+    response_type: 'code',
+    access_type: 'online',
+    state: 'gmail',
+    prompt: 'select_account',
   });
-  if (accounts.length > 0) {
-    showToast(`${accounts.length} account${accounts.length !== 1 ? 's' : ''} connected`);
-    const firstInst = accounts[0]?.connection?.provider_name || 'Bank';
-    const bankInfoEl = document.getElementById('bank-info');
-    if (bankInfoEl) bankInfoEl.textContent = `${firstInst} · ${accounts.length} account${accounts.length !== 1 ? 's' : ''}`;
-  }
+  window.location.href = 'https://accounts.google.com/o/oauth2/v2/auth?' + params;
 }
 
-async function connectWithSaltEdge() {
-  try {
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) { showToast('Please sign in first'); return; }
-    const res = await fetch(`${FUNCTIONS_URL}/saltedge-connect`, {
-      method: 'POST', headers: functionsHeaders(),
-      body: JSON.stringify({ user_id: user.id }),
-    });
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
-    try { localStorage.setItem('_sePending', '1'); } catch {}
-    window.location.href = data.connect_url;
-  } catch (e) {
-    showToast('Connection error: ' + e.message);
+function connectOutlook() {
+  if (OUTLOOK_CLIENT_ID === 'YOUR_OUTLOOK_CLIENT_ID') {
+    showToast('Outlook setup not complete yet'); return;
   }
+  const params = new URLSearchParams({
+    client_id: OUTLOOK_CLIENT_ID,
+    redirect_uri: REDIRECT_URI,
+    scope: 'https://graph.microsoft.com/Mail.Read',
+    response_type: 'code',
+    state: 'outlook',
+  });
+  window.location.href = 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize?' + params;
 }
 
-// Called on page load when Salt Edge redirects back with ?connection_id=
-async function handleSaltEdgeCallback(connection_id) {
+function showEmailPicker() {
+  // Show a simple bottom-sheet style choice
+  const sheet = document.getElementById('email-picker-sheet');
+  if (sheet) { sheet.classList.remove('hide'); return; }
+  // Create on demand
+  const el = document.createElement('div');
+  el.id = 'email-picker-sheet';
+  el.style.cssText = 'position:fixed;inset:0;z-index:200;display:flex;flex-direction:column;justify-content:flex-end;background:rgba(0,0,0,.55)';
+  el.innerHTML = `
+    <div style="background:var(--surface);border-radius:20px 20px 0 0;padding:20px 20px calc(20px + env(safe-area-inset-bottom,0px))">
+      <div style="font-size:15px;font-weight:600;margin-bottom:4px">Scan email for subscriptions</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:18px">We find receipts and recurring charges automatically.</div>
+      <button class="plaid-btn" onclick="document.getElementById('email-picker-sheet').remove();connectGmail()" style="margin-bottom:10px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M2 6l10 7L22 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><rect x="2" y="4" width="20" height="16" rx="2" stroke="currentColor" stroke-width="1.8"/></svg>
+        Scan Gmail
+      </button>
+      <button class="plaid-btn" onclick="document.getElementById('email-picker-sheet').remove();connectOutlook()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="2" y="4" width="20" height="16" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M2 8h20M8 4v16" stroke="currentColor" stroke-width="1.8"/></svg>
+        Scan Outlook / Hotmail
+      </button>
+      <button onclick="document.getElementById('email-picker-sheet').remove()" style="width:100%;margin-top:10px;padding:12px;background:transparent;border:none;color:var(--text2);font-size:14px;cursor:pointer">Cancel</button>
+    </div>`;
+  el.addEventListener('click', e => { if (e.target === el) el.remove(); });
+  document.body.appendChild(el);
+}
+
+// Called after OAuth redirect returns with ?code=...&state=gmail|outlook
+async function handleEmailCallback(code, provider) {
   document.getElementById('auth-screen').classList.add('gone');
   document.getElementById('onboarding').classList.add('gone');
   const ld = document.getElementById('loading');
   const st = document.getElementById('lstep');
   ld.classList.add('vis');
-  st.textContent = 'Finishing bank connection…';
+  st.textContent = `Connecting to ${provider === 'gmail' ? 'Gmail' : 'Outlook'}…`;
 
   try {
-    const res = await fetch(`${FUNCTIONS_URL}/saltedge-fetch`, {
-      method: 'POST', headers: functionsHeaders(),
-      body: JSON.stringify({ connection_id }),
-    });
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
+    const fn = provider === 'gmail' ? 'gmail-scan' : 'outlook-scan';
 
-    st.textContent = 'Detecting subscriptions…';
-    const normalized = normalizeSaltEdgeTransactions(data.transactions || []);
-    _plaidTransactions = normalized;
-    const found = detectSubscriptions(normalized);
+    // Exchange code for access token
+    st.textContent = 'Authorising…';
+    const exchRes = await fetch(`${FUNCTIONS_URL}/${fn}`, {
+      method: 'POST', headers: functionsHeaders(),
+      body: JSON.stringify({ action: 'exchange', code }),
+    });
+    const exchData = await exchRes.json();
+    if (exchData.error) throw new Error(exchData.error);
+
+    // Scan emails
+    st.textContent = 'Scanning emails for subscriptions…';
+    const scanRes = await fetch(`${FUNCTIONS_URL}/${fn}`, {
+      method: 'POST', headers: functionsHeaders(),
+      body: JSON.stringify({ action: 'scan', access_token: exchData.access_token }),
+    });
+    const scanData = await scanRes.json();
+    if (scanData.error) throw new Error(scanData.error);
+
+    st.textContent = 'Processing results…';
+    const emailSubs = (scanData.subscriptions || []).map(s => ({
+      merchant_name: s.merchant,
+      name: s.merchant,
+      amount: s.amount,
+      currency: s.currency || 'USD',
+      date: s.date,
+      source: 'email',
+    }));
+
+    // Run through subscription detector for dedup + frequency check
+    const found = detectSubscriptions(emailSubs);
     SUBS.length = 0;
     if (found.length > 0) { SUBS.push(...found); await saveSubsToSupabase(found); }
 
-    if (data.accounts?.length) renderSaltEdgeAccounts(data.accounts);
+    const providerLabel = provider === 'gmail' ? 'Gmail' : 'Outlook';
+    const bankInfoEl = document.getElementById('bank-info');
+    if (bankInfoEl) bankInfoEl.textContent = `${providerLabel} · ${emailSubs.length} receipts scanned`;
 
-    // Update user profile and check Pro status
+    // Update user profile
     _appEntered = true;
     if (supabaseClient) {
       try {
@@ -1223,30 +1232,29 @@ async function handleSaltEdgeCallback(connection_id) {
           const { data: profile } = await supabaseClient.from('profiles').select('is_pro').eq('user_id', user.id).maybeSingle();
           if (profile?.is_pro) activatePro();
         }
-      } catch (e) { console.warn('SaltEdge callback profile fetch:', e); }
+      } catch (e) { console.warn('email callback profile fetch:', e); }
     }
 
     st.textContent = found.length > 0
       ? `Found ${found.length} subscription${found.length !== 1 ? 's' : ''}!`
-      : 'No subscriptions detected yet. You can add them manually.';
+      : 'No subscriptions found. You can add them manually.';
+
     setTimeout(() => {
       ld.classList.remove('vis');
-      document.getElementById('onboarding').classList.add('gone');
       document.getElementById('main').classList.add('vis');
       renderList();
       renderIns();
       updateHero();
-    }, 800);
+    }, 900);
   } catch (e) {
     ld.classList.remove('vis');
-    // Fall back to normal auth flow
     if (supabaseClient) {
       const { data: { session } } = await supabaseClient.auth.getSession();
       if (session) { enterApp(); } else { document.getElementById('auth-screen').classList.remove('gone'); }
     } else {
       document.getElementById('auth-screen').classList.remove('gone');
     }
-    showToast('Connection error: ' + e.message);
+    showToast('Scan error: ' + e.message);
   }
 }
 
@@ -1852,10 +1860,10 @@ nav('home');
 document.getElementById('view-home').style.display='';
 
 (async () => {
-  // Handle Salt Edge redirect callback: ?connection_id=... arrives after the user connects their bank
+  // Handle OAuth redirects and other URL callbacks
   const urlParams = new URLSearchParams(window.location.search);
-  const seConnectionId = urlParams.get('connection_id');
-  const sePending = (() => { try { return localStorage.getItem('_sePending'); } catch { return null; } })();
+  const oauthCode = urlParams.get('code');
+  const oauthState = urlParams.get('state'); // 'gmail' or 'outlook'
 
   // Handle Stripe payment success return
   if (urlParams.get('stripe_success') === '1') {
@@ -1871,10 +1879,10 @@ document.getElementById('view-home').style.display='';
     }
   }
 
-  if (seConnectionId && sePending) {
-    try { localStorage.removeItem('_sePending'); } catch {}
+  // Handle Gmail / Outlook OAuth callback
+  if (oauthCode && (oauthState === 'gmail' || oauthState === 'outlook')) {
     window.history.replaceState({}, '', window.location.pathname);
-    await handleSaltEdgeCallback(seConnectionId);
+    await handleEmailCallback(oauthCode, oauthState);
     return;
   }
 

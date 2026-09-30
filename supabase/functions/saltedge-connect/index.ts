@@ -5,7 +5,7 @@ const CORS = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const BASE = 'https://www.saltedge.com/api/v5'
+const BASE = 'https://www.saltedge.com/api/v6'
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
@@ -19,38 +19,37 @@ serve(async (req) => {
 
     const hdrs = { 'App-id': APP_ID, 'Secret': SECRET, 'Content-Type': 'application/json' }
 
-    // Create customer (identifier = user_id); if duplicate, fetch by identifier
+    // Try to fetch existing customer first, create if not found
     let customer_id: string
-    const custRes = await fetch(`${BASE}/customers`, {
-      method: 'POST',
-      headers: hdrs,
-      body: JSON.stringify({ data: { identifier: user_id } }),
-    })
-    const custData = await custRes.json()
+    const listRes = await fetch(`${BASE}/customers?identifier=${encodeURIComponent(user_id)}`, { headers: hdrs })
+    const listData = await listRes.json()
 
-    if (custRes.ok) {
-      customer_id = custData.data.id
-    } else if (custData.error?.class === 'CustomerDuplicated') {
-      const listRes = await fetch(`${BASE}/customers?identifier=${encodeURIComponent(user_id)}`, { headers: hdrs })
-      const listData = await listRes.json()
-      if (!listData.data?.[0]) throw new Error('Could not retrieve existing customer')
+    if (listRes.ok && listData.data?.length > 0) {
       customer_id = listData.data[0].id
     } else {
-      throw new Error(custData.error?.message || JSON.stringify(custData))
+      const custRes = await fetch(`${BASE}/customers`, {
+        method: 'POST',
+        headers: hdrs,
+        body: JSON.stringify({ data: { identifier: user_id } }),
+      })
+      const custData = await custRes.json()
+      if (!custRes.ok) throw new Error(custData.error?.message || JSON.stringify(custData))
+      customer_id = custData.data.id
     }
 
     // Request 2 years of history
     const fromDate = new Date()
     fromDate.setFullYear(fromDate.getFullYear() - 2)
 
-    const sessionRes = await fetch(`${BASE}/connect_sessions/create`, {
+    // v6 uses /connections/connect instead of /connect_sessions/create
+    const sessionRes = await fetch(`${BASE}/connections/connect`, {
       method: 'POST',
       headers: hdrs,
       body: JSON.stringify({
         data: {
           customer_id,
           consent: {
-            scopes: ['account_details', 'transactions_details'],
+            scopes: ['accounts', 'transactions'],
             from_date: fromDate.toISOString().split('T')[0],
           },
           attempt: {
