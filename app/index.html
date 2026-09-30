@@ -401,11 +401,11 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
         <div class="ob-tip-t"><strong>Add your credit cards.</strong> Most subscriptions charge to a card, not directly to your bank. Connect your cards for a complete picture.</div>
       </div>
       <div class="ob-scroll">
-        <button id="tink-btn" class="plaid-btn" onclick="connectWithTink()">
+        <button id="se-btn" class="plaid-btn" onclick="connectWithSaltEdge()">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="2" y="5" width="20" height="14" rx="2.5" stroke="currentColor" stroke-width="1.8"/><path d="M2 9h20" stroke="currentColor" stroke-width="1.8"/><circle cx="6" cy="14" r="1.3" fill="currentColor"/><rect x="9" y="13" width="4" height="1.8" rx=".9" fill="currentColor"/></svg>
           Connect &amp; find leaks →
         </button>
-        <div class="sandbox-tip">🔐 <strong>Secure connection</strong> — You'll be redirected to Tink to securely connect your bank. Your credentials never touch our servers. You'll return here automatically.</div>
+        <div class="sandbox-tip">🔐 <strong>Secure connection</strong> — You'll be redirected to securely connect your bank. Your credentials never touch our servers. You'll return here automatically.</div>
 
         <div class="ob-sec-lbl">Checking &amp; savings</div>
         <div class="acct-list" id="bank-list"></div>
@@ -547,7 +547,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
         <div class="sg">
           <div class="sg-lbl">Account</div>
           <div class="si" style="cursor:default"><div class="si-ic" style="background:var(--accent-soft)"><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1.5" y="3" width="12" height="9" rx="2" stroke="var(--accent)" stroke-width="1.3"/><path d="M1.5 6h12" stroke="var(--accent)" stroke-width="1.3"/><circle cx="4.5" cy="9.5" r="1" fill="var(--accent)"/></svg></div><div><div class="si-l">Connected bank</div><div class="si-d" id="bank-info">Not connected</div></div></div>
-          <div class="si" onclick="connectWithTink()" style="cursor:pointer"><div class="si-ic" style="background:var(--accent-soft)"><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M7.5 2v11M2 7.5h11" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round"/></svg></div><div><div class="si-l">Add bank account</div><div class="si-d">Connect another bank or card</div></div><span class="si-r">›</span></div>
+          <div class="si" onclick="connectWithSaltEdge()" style="cursor:pointer"><div class="si-ic" style="background:var(--accent-soft)"><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M7.5 2v11M2 7.5h11" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round"/></svg></div><div><div class="si-l">Add bank account</div><div class="si-d">Connect another bank or card</div></div><span class="si-r">›</span></div>
           <div class="si" style="cursor:default"><div class="si-ic" style="background:var(--warning-soft)"><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M7.5 1.5L9 5.5H13.5L10 8.2L11.3 12.5L7.5 10L3.7 12.5L5 8.2L1.5 5.5H6L7.5 1.5Z" stroke="var(--warning)" stroke-width="1.3" fill="none"/></svg></div><div><div class="si-l">Renewal alerts</div><div class="si-d">Notified 3 days before charges</div></div></div>
         </div>
         <div class="sg" id="sg-sub" style="display:none">
@@ -1108,61 +1108,53 @@ function updateSelCount() {
     lbl.textContent = cards > 0 ? `${cards} credit card${cards>1?'s':''} included — subscriptions will be detected` : 'Add a credit card for better coverage';
   }
 }
-// ── TINK ──
-const TINK_CLIENT_ID = '8a925a2b66d44c7389bdc07c26da3bbd'; // public identifier
+// ── SALT EDGE ──
 const FUNCTIONS_URL = 'https://bvvesewuqlvbainaqpye.supabase.co/functions/v1';
 function functionsHeaders() { return { 'apikey': SUPABASE_ANON_KEY, 'Content-Type': 'application/json' }; }
 
 let _plaidTransactions = []; // generic name kept for detect pipeline compatibility
 
-const _TINK_BTN_HTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="2" y="5" width="20" height="14" rx="2.5" stroke="currentColor" stroke-width="1.8"/><path d="M2 9h20" stroke="currentColor" stroke-width="1.8"/><circle cx="6" cy="14" r="1.3" fill="currentColor"/><rect x="9" y="13" width="4" height="1.8" rx=".9" fill="currentColor"/></svg>`;
-
-function normalizeTinkTransactions(tinkTxs) {
-  // MCC ranges that are clearly not subscriptions (retail, grocery, clothing, restaurants, transport)
+function normalizeSaltEdgeTransactions(txs) {
   function isNonSubMcc(mcc) {
     if (!mcc) return false;
     const n = parseInt(mcc);
-    return (n >= 5300 && n <= 5599) || // retail stores
-           (n >= 5600 && n <= 5699) || // clothing & accessories
-           (n >= 5700 && n <= 5799) || // furniture & home
-           (n >= 5800 && n <= 5814) || // eating places (5815 = digital goods, keep)
-           (n >= 4111 && n <= 4131) || // transport
+    return (n >= 5300 && n <= 5599) ||
+           (n >= 5600 && n <= 5699) ||
+           (n >= 5700 && n <= 5799) ||
+           (n >= 5800 && n <= 5814) ||
+           (n >= 4111 && n <= 4131) ||
            [5411,5412,5422,5541,5542,5912,5310,5311,5331,5999].includes(n);
   }
 
-  // Pick up the currency from the first debit transaction
-  const firstWithCurrency = tinkTxs.find(tx => tx.amount?.currencyCode);
-  if (firstWithCurrency) _currency = firstWithCurrency.amount.currencyCode;
+  const firstWithCurrency = txs.find(tx => tx.currency_code);
+  if (firstWithCurrency) _currency = firstWithCurrency.currency_code;
 
-  return tinkTxs.map(tx => {
-    const scale    = tx.amount?.value?.scale ?? 2;
-    const unscaled = tx.amount?.value?.unscaledValue ?? 0;
-    const raw      = unscaled / Math.pow(10, scale);
+  return txs.map(tx => {
+    const raw = parseFloat(tx.amount) || 0;
     if (raw >= 0) return null;
-    const mcc = tx.merchantInformation?.merchantCategoryCode || '';
-    if (isNonSubMcc(mcc)) return null;
+    if (isNonSubMcc(tx.category?.code)) return null;
     return {
       amount:        -raw,
-      date:          tx.dates?.booked || tx.dates?.value || '',
-      merchant_name: tx.merchantInformation?.merchantName || tx.descriptions?.display || tx.descriptions?.original || '',
-      name:          tx.descriptions?.display || tx.descriptions?.original || '',
+      date:          tx.made_on || '',
+      merchant_name: tx.extra?.merchant_name || tx.description || '',
+      name:          tx.description || '',
     };
   }).filter(tx => tx && tx.amount > 0 && tx.date);
 }
 
-function renderTinkAccounts(accounts) {
+function renderSaltEdgeAccounts(accounts) {
   const checkSvg = `<svg class="acct-check-ic" width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M2 5.5l2.5 2.5 4.5-4.5" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-  const TYPE_COLORS = { CHECKING: '#0B5ED7', SAVINGS: '#2196F3', CREDIT_CARD: '#9D2235', INVESTMENT: '#FF6F00', OTHER: '#4CAF50' };
+  const TYPE_COLORS = { account: '#0B5ED7', savings: '#2196F3', card: '#9D2235', investment: '#FF6F00', bonus: '#FF6F00', loan: '#AD1457' };
   accounts.forEach(acct => {
-    const isCard  = acct.type === 'CREDIT_CARD';
+    const nature  = (acct.nature || 'account').toLowerCase();
+    const isCard  = nature === 'card' || nature === 'credit_card';
     const listId  = isCard ? 'card-list' : 'bank-list';
     const name    = acct.name || 'Account';
-    const inst    = acct.identifiers?.financialInstitution?.name || '';
-    const num     = (acct.identifiers?.financialInstitution?.accountNumber || '').replace(/\*/g, '');
-    const label   = (acct.type || 'Account').replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
-    const sub     = inst ? `${inst}${num ? ' ···' + num.slice(-4) : ''}` : label;
+    const inst    = acct.connection?.provider_name || '';
+    const label   = nature.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    const sub     = inst ? `${inst} · ${label}` : label;
     const initials = name.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 3) || '??';
-    const color   = TYPE_COLORS[acct.type] || TYPE_COLORS.OTHER;
+    const color   = TYPE_COLORS[nature] || TYPE_COLORS.account;
     const row = document.createElement('div');
     row.className = 'acct-row';
     row.onclick = function() { toggleAcct(this); };
@@ -1171,29 +1163,32 @@ function renderTinkAccounts(accounts) {
     toggleAcct(row);
   });
   if (accounts.length > 0) {
-    showToast(`${accounts.length} account${accounts.length !== 1 ? 's' : ''} connected via Tink`);
-    const firstInst = accounts[0]?.identifiers?.financialInstitution?.name || 'Bank';
+    showToast(`${accounts.length} account${accounts.length !== 1 ? 's' : ''} connected`);
+    const firstInst = accounts[0]?.connection?.provider_name || 'Bank';
     const bankInfoEl = document.getElementById('bank-info');
     if (bankInfoEl) bankInfoEl.textContent = `${firstInst} · ${accounts.length} account${accounts.length !== 1 ? 's' : ''}`;
   }
 }
 
-function connectWithTink() {
-  // client_id is a public identifier — safe to use client-side
-  const redirect_uri = 'https://trimcost.app/app'; // must match exactly what's in Tink console
-  const params = new URLSearchParams({
-    client_id: TINK_CLIENT_ID,
-    redirect_uri,
-    market: 'SE',
-    locale: 'en_US',
-  });
-  const url = `https://link.tink.com/1.0/transactions/connect-accounts?${params}`;
-  try { localStorage.setItem('_tinkPending', '1'); } catch {}
-  window.location.href = url;
+async function connectWithSaltEdge() {
+  try {
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) { showToast('Please sign in first'); return; }
+    const res = await fetch(`${FUNCTIONS_URL}/saltedge-connect`, {
+      method: 'POST', headers: functionsHeaders(),
+      body: JSON.stringify({ user_id: user.id }),
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    try { localStorage.setItem('_sePending', '1'); } catch {}
+    window.location.href = data.connect_url;
+  } catch (e) {
+    showToast('Connection error: ' + e.message);
+  }
 }
 
-// Called on page load when Tink redirects back with ?code=
-async function handleTinkCallback(code) {
+// Called on page load when Salt Edge redirects back with ?connection_id=
+async function handleSaltEdgeCallback(connection_id) {
   document.getElementById('auth-screen').classList.add('gone');
   document.getElementById('onboarding').classList.add('gone');
   const ld = document.getElementById('loading');
@@ -1202,21 +1197,21 @@ async function handleTinkCallback(code) {
   st.textContent = 'Finishing bank connection…';
 
   try {
-    const res = await fetch(`${FUNCTIONS_URL}/tink-get-data`, {
+    const res = await fetch(`${FUNCTIONS_URL}/saltedge-fetch`, {
       method: 'POST', headers: functionsHeaders(),
-      body: JSON.stringify({ code }),
+      body: JSON.stringify({ connection_id }),
     });
     const data = await res.json();
     if (data.error) throw new Error(data.error);
 
     st.textContent = 'Detecting subscriptions…';
-    const normalized = normalizeTinkTransactions(data.transactions || []);
+    const normalized = normalizeSaltEdgeTransactions(data.transactions || []);
     _plaidTransactions = normalized;
     const found = detectSubscriptions(normalized);
     SUBS.length = 0;
     if (found.length > 0) { SUBS.push(...found); await saveSubsToSupabase(found); }
 
-    if (data.accounts?.length) renderTinkAccounts(data.accounts);
+    if (data.accounts?.length) renderSaltEdgeAccounts(data.accounts);
 
     // Update user profile and check Pro status
     _appEntered = true;
@@ -1228,7 +1223,7 @@ async function handleTinkCallback(code) {
           const { data: profile } = await supabaseClient.from('profiles').select('is_pro').eq('user_id', user.id).maybeSingle();
           if (profile?.is_pro) activatePro();
         }
-      } catch (e) { console.warn('Tink callback profile fetch:', e); }
+      } catch (e) { console.warn('SaltEdge callback profile fetch:', e); }
     }
 
     st.textContent = found.length > 0
@@ -1855,10 +1850,10 @@ nav('home');
 document.getElementById('view-home').style.display='';
 
 (async () => {
-  // Handle Tink redirect callback: ?code=... arrives after the user connects their bank
+  // Handle Salt Edge redirect callback: ?connection_id=... arrives after the user connects their bank
   const urlParams = new URLSearchParams(window.location.search);
-  const tinkCode  = urlParams.get('code');
-  const tinkPending = (() => { try { return localStorage.getItem('_tinkPending'); } catch { return null; } })();
+  const seConnectionId = urlParams.get('connection_id');
+  const sePending = (() => { try { return localStorage.getItem('_sePending'); } catch { return null; } })();
 
   // Handle Stripe payment success return
   if (urlParams.get('stripe_success') === '1') {
@@ -1874,11 +1869,10 @@ document.getElementById('view-home').style.display='';
     }
   }
 
-  if (tinkCode && tinkPending) {
-    try { localStorage.removeItem('_tinkPending'); } catch {}
-    // Clean the code from the URL so a reload doesn't re-submit it
+  if (seConnectionId && sePending) {
+    try { localStorage.removeItem('_sePending'); } catch {}
     window.history.replaceState({}, '', window.location.pathname);
-    await handleTinkCallback(tinkCode);
+    await handleSaltEdgeCallback(seConnectionId);
     return;
   }
 
