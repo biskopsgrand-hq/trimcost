@@ -431,10 +431,6 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
       <div class="csheet-title" id="add-acct-title">Add bank account</div>
       <div style="display:flex;flex-direction:column;gap:10px">
         <div style="display:flex;flex-direction:column;gap:5px">
-          <label style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px">Bank / Card name</label>
-          <input id="add-acct-name" type="text" placeholder="e.g. Nordea, Barclays, HSBC…" style="background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;padding:11px 13px;font-size:14px;color:var(--text);outline:none;width:100%;box-sizing:border-box" oninput="validateAddAcct()">
-        </div>
-        <div style="display:flex;flex-direction:column;gap:5px">
           <label style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px">Account type</label>
           <select id="add-acct-type" style="background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;padding:11px 13px;font-size:14px;color:var(--text);outline:none;width:100%;box-sizing:border-box;-webkit-appearance:none" onchange="validateAddAcct()">
             <option value="" disabled selected>Select type…</option>
@@ -447,7 +443,11 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
           </select>
         </div>
         <div style="display:flex;flex-direction:column;gap:5px">
-          <label style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px">Last 4 digits <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
+          <label style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px">Bank / Card name</label>
+          <input id="add-acct-name" type="text" placeholder="e.g. Swedbank, Nordea, SEB…" style="background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;padding:11px 13px;font-size:14px;color:var(--text);outline:none;width:100%;box-sizing:border-box" oninput="validateAddAcct()">
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px">
+          <label style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px">Last 4 digits of card/account number <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
           <input id="add-acct-digits" type="text" inputmode="numeric" maxlength="4" placeholder="1234" style="background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;padding:11px 13px;font-size:14px;color:var(--text);outline:none;width:100%;box-sizing:border-box" oninput="this.value=this.value.replace(/\D/g,'').slice(0,4)">
         </div>
       </div>
