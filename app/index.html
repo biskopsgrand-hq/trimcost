@@ -447,8 +447,8 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
           <input id="add-acct-name" type="text" placeholder="e.g. Swedbank, Nordea, SEB…" style="background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;padding:11px 13px;font-size:14px;color:var(--text);outline:none;width:100%;box-sizing:border-box" oninput="validateAddAcct()">
         </div>
         <div style="display:flex;flex-direction:column;gap:5px">
-          <label style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px">Last 4 digits of card/account number <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
-          <input id="add-acct-digits" type="text" inputmode="numeric" maxlength="4" placeholder="1234" style="background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;padding:11px 13px;font-size:14px;color:var(--text);outline:none;width:100%;box-sizing:border-box" oninput="this.value=this.value.replace(/\D/g,'').slice(0,4)">
+          <label style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px">Last 4 digits of card/account number</label>
+          <input id="add-acct-digits" type="text" inputmode="numeric" maxlength="4" placeholder="1234" style="background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;padding:11px 13px;font-size:14px;color:var(--text);outline:none;width:100%;box-sizing:border-box" oninput="this.value=this.value.replace(/\D/g,'').slice(0,4);validateAddAcct()">
         </div>
       </div>
       <button class="btn-cta" id="add-acct-confirm" onclick="confirmAddAcct()" disabled style="margin-top:2px">Add account</button>
@@ -1277,7 +1277,8 @@ function closeAddAcct() {
 function validateAddAcct() {
   const name = document.getElementById('add-acct-name').value.trim();
   const type = document.getElementById('add-acct-type').value;
-  document.getElementById('add-acct-confirm').disabled = !name || !type;
+  const digits = document.getElementById('add-acct-digits').value.trim();
+  document.getElementById('add-acct-confirm').disabled = !name || !type || digits.length !== 4;
 }
 function confirmAddAcct() {
   const name = document.getElementById('add-acct-name').value.trim();
