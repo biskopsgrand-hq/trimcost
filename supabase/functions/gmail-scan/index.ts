@@ -7,13 +7,14 @@ const CORS = {
 
 const REDIRECT_URI = 'https://trimcost.app/app'
 
-// Subscription-specific terms — catches real subscriptions without one-time receipts
+// Broad query to find receipts/invoices — body filter below weeds out one-time purchases
 function buildGmailQuery(): string {
   return [
     'subscription', 'billing', 'renewal', 'recurring',
     'prenumeration', 'abonnemang', 'förnyelse',
-    'your plan', 'your membership', 'monthly plan', 'annual plan',
-    'auto-renew', 'next billing', 'billing cycle',
+    'receipt', 'invoice', 'kvitto', 'faktura',
+    'your plan', 'your membership', 'monthly', 'annual',
+    'auto-renew', 'next billing', 'månadsvis',
   ].map(k => `"${k}"`).join(' OR ')
 }
 
@@ -26,6 +27,10 @@ const SUB_INDICATORS = [
   'billing cycle', 'next billing', 'next charge', 'auto-renew',
   'cancel anytime', 'avsluta när', 'debiteras automatiskt',
   'månadsvis', 'årsvis', 'månadsbetalning',
+  // Spotify/Google Swedish receipt bodies
+  'din prenumeration', 'ditt konto', 'förnyas automatiskt',
+  'nästa fakturadatum', 'nästa betalning', 'din plan',
+  'premium', 'family plan', 'individual plan',
 ]
 
 function isSubscriptionEmail(text: string): boolean {
