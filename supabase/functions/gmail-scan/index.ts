@@ -67,6 +67,22 @@ function extractCurrency(text: string): string {
   return 'SEK' // Default to SEK for Swedish users
 }
 
+// Retail/store keywords in merchant names that indicate one-time purchases
+const RETAIL_KEYWORDS = [
+  'utförsäljning', 'outlet', 'systembolaget', 'bokhandel', 'butiken',
+  'store', 'shop', 'market', 'supermarket', 'affären', 'rea',
+]
+
+function looksLikeRetailStore(name: string): boolean {
+  const lower = name.toLowerCase()
+  return RETAIL_KEYWORDS.some(kw => lower.includes(kw))
+}
+
+function looksLikePersonName(name: string): boolean {
+  // "Nicklas Karlson", "Karlsson, Catherine", "John A. Smith"
+  return /^[A-ZÅÄÖ][a-zåäö]{1,15}[\s,]+[A-ZÅÄÖ][a-zåäö]{1,20}/.test(name.trim())
+}
+
 function senderToMerchant(from: string): string {
   const nameMatch = from.match(/^"?([^"<@\n]+)"?\s*</)?.[1]?.trim()
   if (nameMatch && nameMatch.length > 1) return nameMatch
@@ -169,11 +185,13 @@ serve(async (req) => {
             if (!isSubscriptionEmail(searchText)) return
 
             const amount = extractAmount(searchText)
-            if (!amount || amount < 1 || amount > 30000) return
+            if (!amount || amount < 9 || amount > 30000) return
 
             const currency = extractCurrency(searchText)
             const merchant = senderToMerchant(from)
             if (!merchant || merchant.length < 2) return
+            if (looksLikePersonName(merchant)) return
+            if (looksLikeRetailStore(merchant)) return
 
             const key = merchant.toLowerCase()
             if (!seen.has(key) || date > seen.get(key).date) {

@@ -802,7 +802,7 @@ let curFilt = 'all';
 
 const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
-let _currency = 'USD'; // updated when Tink data loads
+let _currency = 'SEK'; // default for Swedish users
 const fmt = n => {
   try {
     return new Intl.NumberFormat(undefined, { style: 'currency', currency: _currency, maximumFractionDigits: 2 }).format(n);
@@ -1578,7 +1578,11 @@ async function loadSubsFromSupabase() {
   try {
     const { data, error } = await supabaseClient.from('subscriptions').select('*').order('price', { ascending: false });
     if (error || !data?.length) return null;
-    if (data[0]?.currency) _currency = data[0].currency;
+    // Use most common currency from saved data
+    const cFreq = {};
+    data.forEach(r => { if (r.currency) cFreq[r.currency] = (cFreq[r.currency] || 0) + 1; });
+    const topCurrency = Object.entries(cFreq).sort((a,b) => b[1]-a[1])[0]?.[0];
+    if (topCurrency) _currency = topCurrency;
     return data.map((r, i) => ({
       id:     1000 + i,
       name:   r.name,
