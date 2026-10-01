@@ -1576,7 +1576,9 @@ async function saveSubsToSupabase(subs) {
       unused:     s.unused,
       currency:   _currency,
     }));
-    await supabaseClient.from('subscriptions').upsert(rows, { onConflict: 'user_id,sub_key' });
+    // Delete all existing email-sourced subs for this user, then insert fresh
+    await supabaseClient.from('subscriptions').delete().eq('user_id', userId);
+    if (rows.length > 0) await supabaseClient.from('subscriptions').insert(rows);
   } catch (e) { console.warn('saveSubsToSupabase:', e); }
 }
 
