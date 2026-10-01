@@ -1114,7 +1114,7 @@ function updateSelCount() {
 }
 // ── EMAIL SCANNING ──
 const FUNCTIONS_URL = 'https://bvvesewuqlvbainaqpye.supabase.co/functions/v1';
-function functionsHeaders() { return { 'apikey': SUPABASE_ANON_KEY, 'Content-Type': 'application/json' }; }
+function functionsHeaders() { return { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}`, 'Content-Type': 'application/json' }; }
 
 const GMAIL_CLIENT_ID = '733072221188-9ouc8j9ao9spkonebqaecb15334m3o8e.apps.googleusercontent.com';
 const OUTLOOK_CLIENT_ID = 'YOUR_OUTLOOK_CLIENT_ID'; // fill in after Azure setup
@@ -1204,23 +1204,38 @@ async function handleEmailCallback(code, provider) {
     if (scanData.error) throw new Error(scanData.error);
 
     st.textContent = 'Processing results…';
-    const emailSubs = (scanData.subscriptions || []).map(s => ({
-      merchant_name: s.merchant,
-      name: s.merchant,
-      amount: s.amount,
-      currency: s.currency || 'USD',
-      date: s.date,
-      source: 'email',
-    }));
-
-    // Run through subscription detector for dedup + frequency check
-    const found = detectSubscriptions(emailSubs);
+    // Email scan already deduped by merchant — convert directly to subscription objects
+    let nextId = 3000;
+    const found = (scanData.subscriptions || []).map(s => {
+      const meta = brandMeta(s.merchant);
+      const lastDate = s.date || new Date().toISOString().split('T')[0];
+      const nextDt = new Date(lastDate + 'T12:00:00');
+      nextDt.setMonth(nextDt.getMonth() + 1);
+      return {
+        id: nextId++,
+        name: s.merchant,
+        icon: meta.icon,
+        cat: meta.cat,
+        clr: meta.clr,
+        price: Math.round(s.amount * 100) / 100,
+        currency: s.currency || 'USD',
+        last: fmtD(lastDate),
+        next: nextDt.toLocaleDateString('en-US', { month:'short', day:'numeric' }),
+        since: new Date(lastDate + 'T12:00:00').toLocaleDateString('en-US', { month:'short', year:'numeric' }),
+        unused: false,
+        period: 'monthly',
+        source: 'email',
+      };
+    });
     SUBS.length = 0;
     if (found.length > 0) { SUBS.push(...found); await saveSubsToSupabase(found); }
 
     const providerLabel = provider === 'gmail' ? 'Gmail' : 'Outlook';
     const bankInfoEl = document.getElementById('bank-info');
-    if (bankInfoEl) bankInfoEl.textContent = `${providerLabel} · ${emailSubs.length} receipts scanned`;
+    const dbg = scanData.debug || {};
+    if (bankInfoEl) bankInfoEl.textContent = `${providerLabel} · ${dbg.messages_found ?? 0} emails · ${dbg.unique_merchants ?? 0} merchants`;
+    if (dbg.messages_found === 0) showToast('No matching emails found — try adding subscriptions manually');
+    else if (found.length === 0) showToast(`Scanned ${dbg.messages_found} emails, no amounts extracted`);
 
     // Update user profile
     _appEntered = true;

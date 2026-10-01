@@ -7,78 +7,75 @@ const CORS = {
 
 const REDIRECT_URI = 'https://trimcost.app/app'
 
-// Keywords that suggest subscription-related emails
-const SUB_KEYWORDS = [
-  'receipt', 'invoice', 'subscription', 'billing', 'payment confirmation',
-  'renewal', 'renewed', 'charged', 'prenumeration', 'faktura', 'kvitto',
-  'your plan', 'din prenumeration', 'monthly', 'annual', 'yearly',
-  'order confirmation', 'purchase confirmation',
-]
-
+// Broad search — catches English and Swedish subscription emails
 function buildGmailQuery(): string {
-  const keywordQuery = SUB_KEYWORDS.slice(0, 10).map(k => `"${k}"`).join(' OR ')
-  return `(${keywordQuery}) newer_than:24m`
+  return [
+    'receipt', 'invoice', 'subscription', 'billing', 'renewal',
+    'kvitto', 'faktura', 'prenumeration', 'betalning', 'orderbekräftelse',
+    'abonnemang', 'charged', 'payment', 'köpbekräftelse', 'orderconfirmation',
+  ].map(k => `"${k}"`).join(' OR ')
 }
 
 function extractAmount(text: string): number | null {
-  // Match common currency patterns
   const patterns = [
-    /(\d+[\.,]\d{2})\s*(?:SEK|kr|USD|\$|EUR|€|GBP|£)/i,
-    /(?:SEK|kr|USD|\$|EUR|€|GBP|£)\s*(\d+[\.,]\d{2})/i,
-    /(?:total|amount|charged|billed|price|sum)[\s:]*(?:[A-Z]{3}\s*)?(\d+[\.,]\d{2})/i,
-    /(\d+[\.,]\d{2})\s*(?:per month|\/month|\/mo|per year|\/year)/i,
+    // Swedish: 99,00 kr | 99 kr | 99:- kr
+    /(\d[\d\s]*[\d])[,.](\d{2})\s*(?:SEK|kr)\b/i,
+    /(\d+)\s*kr\b/i,
+    /(\d+):-/,
+    // International
+    /(\d+[\.,]\d{2})\s*(?:SEK|USD|EUR|GBP)/i,
+    /(?:SEK|USD|EUR|GBP|\$|€|£)\s*(\d+[\.,]\d{2})/i,
+    /(?:\$|€|£)(\d+[\.,]\d{2})/,
+    // Label-based
+    /(?:total|amount|charged|billed|price|summa|belopp|att betala)[\s:]*(?:[A-Z]{3}\s*)?(\d+[.,]\d{2})/i,
+    /(?:total|amount|charged|billed|price|summa|belopp|att betala)[\s:]*(?:[A-Z]{3}\s*)?(\d+)\b/i,
   ]
   for (const p of patterns) {
     const m = text.match(p)
-    if (m) return parseFloat(m[1].replace(',', '.'))
+    if (m) {
+      // Join digits (may have spaces in Swedish formatting like "1 299")
+      const raw = m[1].replace(/\s/g, '') + (m[2] ? '.' + m[2] : '')
+      const n = parseFloat(raw.replace(',', '.'))
+      if (!isNaN(n)) return n
+    }
   }
   return null
 }
 
 function extractCurrency(text: string): string {
-  if (/SEK|kr\b/i.test(text)) return 'SEK'
+  if (/\bSEK\b|kr\b/i.test(text)) return 'SEK'
   if (/USD|\$/i.test(text)) return 'USD'
   if (/EUR|€/i.test(text)) return 'EUR'
   if (/GBP|£/i.test(text)) return 'GBP'
-  return 'USD'
+  return 'SEK' // Default to SEK for Swedish users
 }
 
 function senderToMerchant(from: string): string {
-  // Extract display name or domain
-  const nameMatch = from.match(/^"?([^"<]+)"?\s*</)?.[1]?.trim()
-  if (nameMatch && nameMatch.length > 2 && !nameMatch.includes('@')) return nameMatch
+  const nameMatch = from.match(/^"?([^"<@\n]+)"?\s*</)?.[1]?.trim()
+  if (nameMatch && nameMatch.length > 1) return nameMatch
 
-  const emailMatch = from.match(/<([^>]+)>/) ?? from.match(/([^\s]+@[^\s]+)/)
-  if (emailMatch) {
-    const email = emailMatch[1]
-    const domain = email.split('@')[1] ?? ''
-    // Strip common prefixes
-    const cleaned = domain
-      .replace(/^(mail\.|email\.|noreply\.|no-reply\.|billing\.|payments?\.|notification\.|info\.|hello\.|support\.)/i, '')
-      .replace(/\.(com|net|org|io|se|co\.uk|app)$/i, '')
-    return cleaned.charAt(0).toUpperCase() + cleaned.slice(1)
-  }
-  return from
+  const emailMatch = (from.match(/<([^>]+)>/) ?? from.match(/([^\s]+@[^\s]+)/))?.[1] ?? ''
+  const domain = (emailMatch.split('@')[1] ?? from)
+    .replace(/^(mail\.|email\.|noreply\.|no-reply\.|billing\.|payments?\.|notification\.|info\.|hello\.|support\.|hjalp\.|kundservice\.)/i, '')
+    .replace(/\.(com|net|org|io|se|co\.uk|app|nu)$/i, '')
+    .replace(/-/g, ' ')
+  return domain.charAt(0).toUpperCase() + domain.slice(1)
 }
 
 function decodeBase64(str: string): string {
   try {
-    const b64 = str.replace(/-/g, '+').replace(/_/g, '/')
-    return atob(b64)
+    return atob(str.replace(/-/g, '+').replace(/_/g, '/'))
   } catch { return '' }
 }
 
-function extractTextFromPart(part: any): string {
+function extractText(part: any): string {
   if (!part) return ''
-  if (part.mimeType === 'text/plain' && part.body?.data) {
-    return decodeBase64(part.body.data)
+  if ((part.mimeType === 'text/plain' || part.mimeType === 'text/html') && part.body?.data) {
+    let text = decodeBase64(part.body.data)
+    if (part.mimeType === 'text/html') text = text.replace(/<[^>]+>/g, ' ')
+    return text
   }
-  if (part.mimeType === 'text/html' && part.body?.data) {
-    return decodeBase64(part.body.data).replace(/<[^>]+>/g, ' ')
-  }
-  if (part.parts) {
-    return part.parts.map((p: any) => extractTextFromPart(p)).join(' ')
-  }
+  if (part.parts) return part.parts.map((p: any) => extractText(p)).join(' ')
   return ''
 }
 
@@ -92,7 +89,6 @@ serve(async (req) => {
     const { action, code, access_token: existingToken } = await req.json()
 
     if (action === 'exchange') {
-      // Exchange authorization code for tokens
       if (!code) throw new Error('code required')
       const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
         method: 'POST',
@@ -113,68 +109,68 @@ serve(async (req) => {
     }
 
     if (action === 'scan') {
-      const token = existingToken
-      if (!token) throw new Error('access_token required')
-
-      const bearer = `Bearer ${token}`
+      if (!existingToken) throw new Error('access_token required')
+      const bearer = `Bearer ${existingToken}`
       const query = buildGmailQuery()
 
-      // Search messages
-      let messageIds: string[] = []
+      // Search messages — up to 500
+      const messageIds: string[] = []
       let pageToken: string | undefined
       for (let page = 0; page < 5; page++) {
         const url = `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${encodeURIComponent(query)}&maxResults=100` +
           (pageToken ? `&pageToken=${pageToken}` : '')
-        const searchRes = await fetch(url, { headers: { Authorization: bearer } })
-        const searchData = await searchRes.json()
-        if (searchData.error) throw new Error(searchData.error.message)
-        if (Array.isArray(searchData.messages)) messageIds.push(...searchData.messages.map((m: any) => m.id))
-        if (!searchData.nextPageToken || messageIds.length >= 300) break
-        pageToken = searchData.nextPageToken
+        const res = await fetch(url, { headers: { Authorization: bearer } })
+        const data = await res.json()
+        if (data.error) throw new Error(data.error.message)
+        if (Array.isArray(data.messages)) messageIds.push(...data.messages.map((m: any) => m.id))
+        if (!data.nextPageToken || messageIds.length >= 500) break
+        pageToken = data.nextPageToken
       }
 
-      // Fetch message details in batches of 20
-      const subscriptions: any[] = []
-      const seen = new Map<string, any>() // merchant -> sub
+      const seen = new Map<string, any>()
 
-      for (let i = 0; i < Math.min(messageIds.length, 200); i += 20) {
-        const batch = messageIds.slice(i, i + 20)
-        await Promise.all(batch.map(async (id) => {
-          const msgRes = await fetch(
-            `https://gmail.googleapis.com/gmail/v1/users/me/messages/${id}?format=full`,
-            { headers: { Authorization: bearer } }
-          )
-          const msg = await msgRes.json()
-          if (msg.error) return
+      // Fetch details in batches of 20
+      for (let i = 0; i < Math.min(messageIds.length, 300); i += 20) {
+        await Promise.all(messageIds.slice(i, i + 20).map(async (id) => {
+          try {
+            const res = await fetch(
+              `https://gmail.googleapis.com/gmail/v1/users/me/messages/${id}?format=full`,
+              { headers: { Authorization: bearer } }
+            )
+            const msg = await res.json()
+            if (msg.error) return
 
-          const headers = msg.payload?.headers ?? []
-          const from = headers.find((h: any) => h.name === 'From')?.value ?? ''
-          const subject = headers.find((h: any) => h.name === 'Subject')?.value ?? ''
-          const dateStr = headers.find((h: any) => h.name === 'Date')?.value ?? ''
-          const date = dateStr ? new Date(dateStr).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
+            const hdrs = msg.payload?.headers ?? []
+            const from = hdrs.find((h: any) => h.name === 'From')?.value ?? ''
+            const subject = hdrs.find((h: any) => h.name === 'Subject')?.value ?? ''
+            const dateStr = hdrs.find((h: any) => h.name === 'Date')?.value ?? ''
+            const date = dateStr ? new Date(dateStr).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
 
-          const bodyText = extractTextFromPart(msg.payload)
-          const searchText = `${subject} ${bodyText}`.slice(0, 2000)
+            const bodyText = extractText(msg.payload).slice(0, 3000)
+            const searchText = `${subject} ${bodyText}`
 
-          const amount = extractAmount(searchText)
-          if (!amount || amount < 0.5 || amount > 50000) return
+            const amount = extractAmount(searchText)
+            if (!amount || amount < 1 || amount > 30000) return
 
-          const currency = extractCurrency(searchText)
-          const merchant = senderToMerchant(from)
-          const key = merchant.toLowerCase()
+            const currency = extractCurrency(searchText)
+            const merchant = senderToMerchant(from)
+            if (!merchant || merchant.length < 2) return
 
-          // Keep most recent email per merchant
-          if (!seen.has(key) || date > seen.get(key).date) {
-            seen.set(key, { merchant, amount, currency, date, subject })
-          }
+            const key = merchant.toLowerCase()
+            if (!seen.has(key) || date > seen.get(key).date) {
+              seen.set(key, { merchant, amount, currency, date, subject: subject.slice(0, 80) })
+            }
+          } catch { /* skip individual message errors */ }
         }))
       }
 
-      seen.forEach(sub => subscriptions.push(sub))
+      const subscriptions: any[] = []
+      seen.forEach(s => subscriptions.push(s))
 
-      return new Response(JSON.stringify({ subscriptions }), {
-        headers: { ...CORS, 'Content-Type': 'application/json' },
-      })
+      return new Response(JSON.stringify({
+        subscriptions,
+        debug: { messages_found: messageIds.length, unique_merchants: seen.size },
+      }), { headers: { ...CORS, 'Content-Type': 'application/json' } })
     }
 
     throw new Error('Invalid action')
