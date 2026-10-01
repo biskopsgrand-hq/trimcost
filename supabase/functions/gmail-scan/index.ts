@@ -7,13 +7,30 @@ const CORS = {
 
 const REDIRECT_URI = 'https://trimcost.app/app'
 
-// Broad search — catches English and Swedish subscription emails
+// Subscription-specific terms — catches real subscriptions without one-time receipts
 function buildGmailQuery(): string {
   return [
-    'receipt', 'invoice', 'subscription', 'billing', 'renewal',
-    'kvitto', 'faktura', 'prenumeration', 'betalning', 'orderbekräftelse',
-    'abonnemang', 'charged', 'payment', 'köpbekräftelse', 'orderconfirmation',
+    'subscription', 'billing', 'renewal', 'recurring',
+    'prenumeration', 'abonnemang', 'förnyelse',
+    'your plan', 'your membership', 'monthly plan', 'annual plan',
+    'auto-renew', 'next billing', 'billing cycle',
   ].map(k => `"${k}"`).join(' OR ')
+}
+
+// Must contain at least one of these to count as a subscription (not a one-time receipt)
+const SUB_INDICATORS = [
+  'subscription', 'subscribe', 'recurring', 'renewal', 'renew',
+  'monthly', 'annual', 'yearly', 'per month', 'per year', '/month', '/year',
+  'prenumeration', 'abonnemang', 'förnyelse', 'automatisk förnyelse',
+  'your plan', 'your membership', 'membership', 'member since',
+  'billing cycle', 'next billing', 'next charge', 'auto-renew',
+  'cancel anytime', 'avsluta när', 'debiteras automatiskt',
+  'månadsvis', 'årsvis', 'månadsbetalning',
+]
+
+function isSubscriptionEmail(text: string): boolean {
+  const lower = text.toLowerCase()
+  return SUB_INDICATORS.some(kw => lower.includes(kw))
 }
 
 function extractAmount(text: string): number | null {
@@ -148,6 +165,8 @@ serve(async (req) => {
 
             const bodyText = extractText(msg.payload).slice(0, 3000)
             const searchText = `${subject} ${bodyText}`
+
+            if (!isSubscriptionEmail(searchText)) return
 
             const amount = extractAmount(searchText)
             if (!amount || amount < 1 || amount > 30000) return

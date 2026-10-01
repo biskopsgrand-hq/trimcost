@@ -1204,9 +1204,16 @@ async function handleEmailCallback(code, provider) {
     if (scanData.error) throw new Error(scanData.error);
 
     st.textContent = 'Processing results…';
-    // Email scan already deduped by merchant — convert directly to subscription objects
+    const rawSubs = scanData.subscriptions || [];
+    // Set global currency from results (most common currency)
+    if (rawSubs.length > 0) {
+      const currencies = rawSubs.map(s => s.currency).filter(Boolean);
+      const freq = {};
+      currencies.forEach(c => freq[c] = (freq[c] || 0) + 1);
+      _currency = Object.entries(freq).sort((a,b) => b[1]-a[1])[0]?.[0] || 'SEK';
+    }
     let nextId = 3000;
-    const found = (scanData.subscriptions || []).map(s => {
+    const found = rawSubs.map(s => {
       const meta = brandMeta(s.merchant);
       const lastDate = s.date || new Date().toISOString().split('T')[0];
       const nextDt = new Date(lastDate + 'T12:00:00');
@@ -1218,7 +1225,7 @@ async function handleEmailCallback(code, provider) {
         cat: meta.cat,
         clr: meta.clr,
         price: Math.round(s.amount * 100) / 100,
-        currency: s.currency || 'USD',
+        currency: s.currency || _currency,
         last: fmtD(lastDate),
         next: nextDt.toLocaleDateString('en-US', { month:'short', day:'numeric' }),
         since: new Date(lastDate + 'T12:00:00').toLocaleDateString('en-US', { month:'short', year:'numeric' }),

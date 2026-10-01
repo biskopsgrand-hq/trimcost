@@ -32,7 +32,7 @@ function extractCurrency(text: string): string {
   if (/USD|\$/i.test(text)) return 'USD'
   if (/EUR|€/i.test(text)) return 'EUR'
   if (/GBP|£/i.test(text)) return 'GBP'
-  return 'USD'
+  return 'SEK'
 }
 
 function senderToMerchant(from: string, emailAddress: string): string {
