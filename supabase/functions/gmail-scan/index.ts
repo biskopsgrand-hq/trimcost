@@ -330,24 +330,27 @@ serve(async (req) => {
             const dateStr = hdrs.find((h: any) => h.name === 'Date')?.value ?? ''
             const date = dateStr ? new Date(dateStr).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
 
-            const bodyText = extractText(msg.payload).slice(0, 3000)
-            const searchText = `${subject} ${bodyText}`
-
-            if (!isSubscriptionEmail(searchText)) return
-
-            const amount = extractAmount(searchText)
-            if (!amount || amount < 9 || amount > 30000) return
-
-            const currency = extractCurrency(searchText)
             const merchant = senderToMerchant(from)
             if (!merchant || merchant.length < 2) return
             if (looksLikePersonName(merchant)) return
             if (looksLikeRetailStore(merchant)) return
 
+            const bodyText = extractText(msg.payload).slice(0, 3000)
+            const searchText = `${subject} ${bodyText}`
+
+            const amount = extractAmount(searchText)
+            if (!amount || amount < 9 || amount > 30000) return
+
+            const currency = extractCurrency(searchText)
+            const isKnown = matchKnownService(merchant, amount)
+
+            // Known services: just need a valid amount. Unknown: must look like a subscription email.
+            if (!isKnown && !isSubscriptionEmail(searchText)) return
+
             const key = merchant.toLowerCase()
             const existing = seen.get(key)
             if (!existing) {
-              seen.set(key, { merchant, amount, currency, date, subject: subject.slice(0, 80), count: 1 })
+              seen.set(key, { merchant, amount, currency, date, subject: subject.slice(0, 80), count: 1, isKnown })
             } else {
               existing.count++
               if (date > existing.date) {
@@ -361,11 +364,10 @@ serve(async (req) => {
         }))
       }
 
-      // Known services: accept with 1 email. Unknown senders: require 2+ (filters promos).
+      // Known services: 1 email is enough. Unknown senders: require 2+ (filters promos).
       const subscriptions: any[] = []
       seen.forEach(s => {
-        const isKnown = matchKnownService(s.merchant, s.amount)
-        if (isKnown || s.count >= 2) subscriptions.push({ ...s, known: isKnown })
+        if (s.isKnown || s.count >= 2) subscriptions.push(s)
       })
 
       return new Response(JSON.stringify({
